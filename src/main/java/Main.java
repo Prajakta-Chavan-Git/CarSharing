@@ -126,6 +126,7 @@ public class Main implements AutoCloseable {
         mongoCollection.insertOne(doc1);
     }
 
+<<<<<<< HEAD
     //Method to store a user in MongoDB and Neo4J
     public void addUser(User user) {
 
@@ -137,6 +138,11 @@ public class Main implements AutoCloseable {
 
         mongoCollection.insertOne(doc1);
         user.setObjectID(doc1.getObjectId("_id").toString());
+=======
+    public void uc5(){
+        //Here is the method for UC5
+    }
+>>>>>>> Added UC5 functions as test for branching
 
         //Neo4j
         Session session = driverNeo4j.session();
