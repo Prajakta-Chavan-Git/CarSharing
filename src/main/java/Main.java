@@ -87,5 +87,8 @@ public class Main implements AutoCloseable {
 
     }
 
+    public void uc5(){
+        //Here is the method for UC5
+    }
 
 }
