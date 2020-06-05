@@ -3,3 +3,8 @@ log
 .gradle
 out
 .idea
+<<<<<<< HEAD
+=======
+build
+gradle
+>>>>>>> Git ignore update
