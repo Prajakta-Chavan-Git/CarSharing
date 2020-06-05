@@ -1,0 +1,25 @@
+version: '2'
+services:
+  redis-master:
+    image: redis
+    volumes:
+      - "./data:/data"
+    ports:
+      - "6379:6379"
+
+  mongodb-master:
+    image: mongo
+    volumes:
+      - "./data:/data"
+    ports:
+      - "27017:27017"
+
+  neo4j-master:
+    image: neo4j
+    volumes:
+      - "./data:/data"
+      - "./log:/log"
+    ports:
+      - "7474:7474"
+      - "7473:7473"
+      - "7687:7687"

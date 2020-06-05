@@ -1,0 +1,19 @@
+plugins {
+    id 'java-library'
+}
+
+group 'srh.adb.carsharing'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    compile 'org.neo4j.driver:neo4j-java-driver:4.0.1'
+    compile 'org.mongodb:mongodb-driver:3.3.0'
+    compile 'redis.clients:jedis:2.9.0'
+}
