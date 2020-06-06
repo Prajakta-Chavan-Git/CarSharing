@@ -6,13 +6,16 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 //import org.neo4j.driver.v1.*;
 import redis.clients.jedis.Jedis;
+import storedobjects.Address;
 import storedobjects.Car;
 import storedobjects.User;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 import static org.neo4j.driver.Values.parameters;
@@ -80,6 +83,7 @@ public class Main implements AutoCloseable {
             main.neo4jTest("hello, world");
             main.redisTest("Redishallo");
             main.mongoTest("");
+            main.init();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -124,6 +128,16 @@ public class Main implements AutoCloseable {
 
     //Method to store a user in MongoDB and Neo4J
     public void addUser(User user) {
+
+
+        //Mongo
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("user");
+        Document doc1 = user.toDocument();
+
+        mongoCollection.insertOne(doc1);
+        user.setObjectID(doc1.getObjectId("_id").toString());
+
         //Neo4j
         Session session = driverNeo4j.session();
         String greeting = session.writeTransaction(new TransactionWork<String>() {
@@ -134,14 +148,13 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
-
-        //Mongo
-        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
-        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("user");
-        Document doc1 = user.toDocument();
-
-        mongoCollection.insertOne(doc1);
     }
 
+    public void init(){
+        User alice =  new User(new Date(1998,5,23), null, "Alice BlueDress", new Address("Heidelberg", "WonderlandStreet","314", "67123"),
+                "+49152514586436", "wonderland@redQueen.com", "DE15000523001125", "User",null);
+        addUser(alice);
 
+
+    }
 }

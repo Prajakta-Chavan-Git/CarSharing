@@ -30,7 +30,6 @@ public class User implements IStoreableObject{
         return objectID;
     }
 
-    public User(){}
 
     public User(Date birthDate, String objectID, String name, Address address, String phoneNumber, String email, String bankAccount, String status, ArrayList<Query> queries) {
         this.birthDate = birthDate;

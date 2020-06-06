@@ -10,6 +10,13 @@ public class Address implements IStoreableObject {
     private String houseNumber;
     private String postalCode;
 
+    public Address(String city, String street, String houseNumber, String postalCode) {
+        this.city = city;
+        this.street = street;
+        this.houseNumber = houseNumber;
+        this.postalCode = postalCode;
+    }
+
     @Override
     public Document toDocument() {
         Document doc = new Document();
