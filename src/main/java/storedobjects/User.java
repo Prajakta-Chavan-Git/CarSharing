@@ -18,18 +18,6 @@ public class User implements IStoreableObject{
     private ArrayList<Query> queries;
     private ArrayList<Car> ownedCars;
 
-    public Date getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(Date birthDate) {
-        this.birthDate = birthDate;
-    }
-
-    public String getObjectID() {
-        return objectID;
-    }
-
 
     public User(Date birthDate, String objectID, String name, Address address, String phoneNumber, String email, String bankAccount, String status, ArrayList<Query> queries) {
         this.birthDate = birthDate;
@@ -42,6 +30,19 @@ public class User implements IStoreableObject{
         this.status = status;
         this.queries = queries;
     }
+
+    public Date getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(Date birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getObjectID() {
+        return objectID;
+    }
+
 
     public void setObjectID(String objectID) {
         if(this.objectID==null)

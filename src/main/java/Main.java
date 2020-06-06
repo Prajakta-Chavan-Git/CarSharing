@@ -12,9 +12,11 @@ import org.neo4j.driver.*;
 import redis.clients.jedis.Jedis;
 import storedobjects.Address;
 import storedobjects.Car;
+import storedobjects.Query;
 import storedobjects.User;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -80,10 +82,12 @@ public class Main implements AutoCloseable {
 
     public static void main(String[] args) {
         try (Main main = new Main()) {
-            main.neo4jTest("hello, world");
-            main.redisTest("Redishallo");
-            main.mongoTest("");
-            main.init();
+            //main.neo4jTest("hello, world");
+            //main.redisTest("Redishallo");
+            //main.mongoTest("");
+            //main.init();
+            //main.addUser(main.createUser());
+            main.storeCar(main.createCar(),main.createUser());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,9 +101,12 @@ public class Main implements AutoCloseable {
 
             @Override
             public String execute(Transaction tx) {
-                Result result = tx.run("CREATE (a:Car{objectID:$cID, manufacturer: $manufacturer, seats:$seats, type:$type, fuelConsumption:$fuelConsumption, status:$status, fuelType:$fuelType})" +
+                Result result = tx.run(
+                        "CREATE (a:Car{objectID:$cID, manufacturer: $manufacturer, seats:$seats, type:$type, fuelConsumption:$fuelConsumption, status:$status, fuelType:$fuelType})" +
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
-                                "MATCH (u:User{objectID=$uID}) Return (u)" +
+                                "WITH (l)" +
+                                "MATCH (u:User{objectID:$uID}) " +
+                                "WITH (u)"+
                                 "MERGE (u) -[:OWNES {offeringSince:$today}]-> (c) "+
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
                         parameters("$cID", car.getObjectID(),
@@ -112,7 +119,8 @@ public class Main implements AutoCloseable {
                                 "status", car.getStatus(),
                                 "fuelType", car.getFuelType(),
                                 "uID", owner.getObjectID(),
-                                "$today", LocalDate.now()
+                                "cID", car.getObjectID(),
+                                "today", LocalDate.now()
                         ));
                 return "done";
             }
@@ -137,6 +145,7 @@ public class Main implements AutoCloseable {
         Document doc1 = user.toDocument();
 
         mongoCollection.insertOne(doc1);
+        System.out.println("Successfully added: " + doc1 + " to MongoDB");
         user.setObjectID(doc1.getObjectId("_id").toString());
 =======
     public void uc5(){
@@ -154,6 +163,7 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
+        System.out.println("Successfully added: " + user + " to Neo4J");
     }
 
     public void init(){
@@ -162,5 +172,34 @@ public class Main implements AutoCloseable {
         addUser(alice);
 
 
+    }
+
+    //Creating Test Data
+    public Car createCar(){
+            Car car = new Car(
+                    (int)(Math.random() * ((7-2) +1))+2,
+                    null,
+                    "Audi",
+                    "Limousine",
+                    9.9,
+                    5.101030103101,
+                    4.1212100113,
+                    "Available",
+                    "Diesel");
+            return car;
+    }
+
+    public User createUser(){
+        User user1 = new User(
+                new Date(2000,10,25),
+                null,
+                "Max Mustermann",
+                new Address("Heidelberg","Haydnstrasse", "14", "21031"),
+                "+123111222333",
+                "maxmuster@gmail.com",
+                "DE10 1002 3124 2749 1752",
+                "Available",
+                null);
+        return user1;
     }
 }
