@@ -6,11 +6,16 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 //import org.neo4j.driver.v1.*;
 import redis.clients.jedis.Jedis;
+import storedobjects.Address;
 import storedobjects.Car;
+import storedobjects.User;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 import static org.neo4j.driver.Values.parameters;
@@ -61,9 +66,9 @@ public class Main implements AutoCloseable {
     }
 
     public void mongoTest(final String message) {
-        MongoDatabase mongoDatabase =mongoClient.getDatabase("test");
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("test");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("testCollection");
-        Document doc1 = new Document("key1","val1").append("arg1", "valArg1");
+        Document doc1 = new Document("key1", "val1").append("arg1", "valArg1");
         mongoCollection.insertOne(doc1);
         mongoCollection.find().forEach(new Block<Document>() {
             @Override
@@ -74,21 +79,82 @@ public class Main implements AutoCloseable {
     }
 
     public static void main(String[] args) {
-        try(Main main = new Main()){
+        try (Main main = new Main()) {
             main.neo4jTest("hello, world");
             main.redisTest("Redishallo");
             main.mongoTest("");
-        }catch(Exception e){
+            main.init();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void storeCar(Car car){
+    //Method to store a car in MongoDB and Neo4J
+    public void storeCar(Car car, User owner) {
+        //Neo4j
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
 
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run("CREATE (a:Car{objectID:$cID, manufacturer: $manufacturer, seats:$seats, type:$type, fuelConsumption:$fuelConsumption, status:$status, fuelType:$fuelType})" +
+                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
+                                "MATCH (u:User{objectID=$uID}) Return (u)" +
+                                "MERGE (u) -[:OWNES {offeringSince:$today}]-> (c) "+
+                                "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
+                        parameters("$cID", car.getObjectID(),
+                                "manufacturer", car.getManufacturer(),
+                                "seats", car.getSeats(),
+                                "type", car.getCarType(),
+                                "fuelConsumption", car.getFuelConsumption(),
+                                "longitude", car.getLongitude(),
+                                "latitude", car.getLatitude(),
+                                "status", car.getStatus(),
+                                "fuelType", car.getFuelType(),
+                                "uID", owner.getObjectID(),
+                                "$today", LocalDate.now()
+                        ));
+                return "done";
+            }
+        });
+
+        //Mongo
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = car.toDocument();
+
+        mongoCollection.insertOne(doc1);
     }
 
-    public void uc5(){
-        //Here is the method for UC5
+    //Method to store a user in MongoDB and Neo4J
+    public void addUser(User user) {
+
+
+        //Mongo
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("user");
+        Document doc1 = user.toDocument();
+
+        mongoCollection.insertOne(doc1);
+        user.setObjectID(doc1.getObjectId("_id").toString());
+
+        //Neo4j
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run("Create (a:User{objectID:$id})", parameters("id", user.getObjectID()));
+                return "done";
+            }
+        });
     }
 
+    public void init(){
+        User alice =  new User(new Date(1998,5,23), null, "Alice BlueDress", new Address("Heidelberg", "WonderlandStreet","314", "67123"),
+                "+49152514586436", "wonderland@redQueen.com", "DE15000523001125", "User",null);
+        addUser(alice);
+
+
+    }
 }
