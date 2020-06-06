@@ -1,14 +1,16 @@
 package storedobjects;
 
+import org.bson.Document;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class User {
+public class User implements IStoreableObject{
     private Date birthDate;
     private String objectID;
     private String name;
-    private String address;
+    private Address address;
     private String phoneNumber;
     private String email;
     private String bankAccount;
@@ -30,7 +32,7 @@ public class User {
 
     public User(){}
 
-    public User(Date birthDate, String objectID, String name, String address, String phoneNumber, String email, String bankAccount, String status, ArrayList<Query> queries) {
+    public User(Date birthDate, String objectID, String name, Address address, String phoneNumber, String email, String bankAccount, String status, ArrayList<Query> queries) {
         this.birthDate = birthDate;
         this.objectID = objectID;
         this.name = name;
@@ -55,11 +57,11 @@ public class User {
         this.name = name;
     }
 
-    public String getAddress() {
+    public Address getAddress() {
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(Address address) {
         this.address = address;
     }
 
@@ -102,5 +104,48 @@ public class User {
     public void setQueries(ArrayList<Query> queries) {
         this.queries = queries;
     }
+
+    @Override
+    public Document toDocument() {
+        Document doc = new Document();
+        if (objectID != null)
+            doc.append("objectID", objectID);
+        if (birthDate != null)
+            doc.append("birthDate", birthDate);
+        if (name != null)
+            doc.append("name", name);
+        if (address != null)
+            doc.append("address", address.toDocument());
+        if (phoneNumber != null)
+            doc.append("phoneNumber", phoneNumber);
+        if (email != null)
+            doc.append("email", email);
+        if (bankAccount != null)
+            doc.append("bankAccount", bankAccount);
+        if (status != null)
+            doc.append("status", status);
+        if (queries != null)
+            doc.append("queries", storeQueries());
+        if (ownedCars != null)
+            doc.append("ownedCars", storeCars());
+        return doc;
+    }
+
+    private ArrayList<Document> storeQueries(){
+        ArrayList<Document> docs =new ArrayList<>();
+        for(Query query : queries){
+            docs.add(query.toDocument());
+        }
+        return docs;
+    }
+
+    private ArrayList<Document> storeCars(){
+        ArrayList<Document> docs =new ArrayList<>();
+        for(Car car : ownedCars){
+            docs.add(new Document("ObjectID",car.getObjectID()));
+        }
+        return docs;
+    }
+
 
 }

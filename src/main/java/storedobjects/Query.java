@@ -1,9 +1,11 @@
 package storedobjects;
 
+import org.bson.Document;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class Query {
+public class Query implements IStoreableObject {
     private List<String> parameter;
 
     public void setParameter(List<String> parameter) {
@@ -20,5 +22,14 @@ public class Query {
 
     public void addParam(String param){
         parameter.add(param);
+    }
+
+    @Override
+    public Document toDocument() {
+        Document doc = new Document();
+        if(parameter != null){
+            doc.append("parameter", parameter);
+        }
+        return doc;
     }
 }
