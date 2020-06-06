@@ -1,5 +1,7 @@
 package storedobjects;
 
+import java.util.ArrayList;
+
 public class Car {
 
     private int seats;
@@ -11,6 +13,7 @@ public class Car {
     private double latitude;
     private String status;
     private String fuelType;
+    private ArrayList<Comment> comments;
 
     public void setObjectID(String pID){
         if(objectID == null)
