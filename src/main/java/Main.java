@@ -5,6 +5,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import createObjects.CarFactory;
+import jdk.vm.ci.aarch64.AArch64;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
@@ -87,7 +89,9 @@ public class Main implements AutoCloseable {
             //main.mongoTest("");
             //main.init();
             //main.addUser(main.createUser());
-            main.storeCar(main.createCar(),main.createUser());
+            //main.storeCar(main.createCar(),main.createUser());
+            CarFactory factory = new CarFactory(10);
+            System.out.println(factory.getCarList());
         } catch (Exception e) {
             e.printStackTrace();
         }
