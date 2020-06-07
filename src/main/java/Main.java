@@ -93,12 +93,18 @@ public class Main implements AutoCloseable {
         }
     }
 
-    //Method to store a car in MongoDB and Neo4J
     public void storeCar(Car car, User owner) {
+
+        //Mongo
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = car.toDocument();
+        mongoCollection.insertOne(doc1);
+        car.setObjectID(doc1.getObjectId("_id").toString());
+
         //Neo4j
         Session session = driverNeo4j.session();
         String greeting = session.writeTransaction(new TransactionWork<String>() {
-
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
@@ -125,13 +131,6 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
-
-        //Mongo
-        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
-        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
-        Document doc1 = car.toDocument();
-
-        mongoCollection.insertOne(doc1);
     }
 
 <<<<<<< HEAD
