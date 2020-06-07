@@ -133,7 +133,6 @@ public class Main implements AutoCloseable {
         });
     }
 
-<<<<<<< HEAD
     //Method to store a user in MongoDB and Neo4J
     public void addUser(User user) {
 
@@ -146,11 +145,7 @@ public class Main implements AutoCloseable {
         mongoCollection.insertOne(doc1);
         System.out.println("Successfully added: " + doc1 + " to MongoDB");
         user.setObjectID(doc1.getObjectId("_id").toString());
-=======
-    public void uc5(){
-        //Here is the method for UC5
-    }
->>>>>>> Added UC5 functions as test for branching
+
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -164,6 +159,67 @@ public class Main implements AutoCloseable {
         });
         System.out.println("Successfully added: " + user + " to Neo4J");
     }
+
+    public void updateUser(User user){
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("user");
+        Document doc1 = user.toDocument();
+
+        mongoCollection.findOneAndUpdate(new Document("_id", user.getObjectID()),doc1);
+    }
+
+    public void updateCarStatus(Car car){
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = car.toDocument();
+
+        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),doc1);
+
+        //Neo4j
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH (c:Car{id:$c_ID}) SET c.status=$status",
+                        parameters("$cID", car.getObjectID(),
+                                "status", car.getStatus()
+
+                        ));
+                return "done";
+            }
+        });
+    }
+
+    public void updateCarLocation(Car car){
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = car.toDocument();
+
+        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),doc1);
+
+        //Neo4j
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH (c:Car{id:$c_ID})"+
+                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
+                                "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
+                        parameters("$cID", car.getObjectID(),
+                                "status", car.getStatus(),
+                                "today", LocalDate.now()
+
+                        ));
+                return "done";
+            }
+        });
+    }
+
+
 
     public void init(){
         User alice =  new User(new Date(1998,5,23), null, "Alice BlueDress", new Address("Heidelberg", "WonderlandStreet","314", "67123"),
