@@ -13,15 +13,14 @@ import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 //import org.neo4j.driver.v1.*;
 import redis.clients.jedis.Jedis;
-import storedobjects.Address;
-import storedobjects.Car;
+import storedobjects.*;
 import storedobjects.Query;
-import storedobjects.User;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -170,36 +169,25 @@ public class Main implements AutoCloseable {
         User alice =  new User(new Date(1998,5,23), null, "Alice BlueDress", new Address("Heidelberg", "WonderlandStreet","314", "67123"),
                 "+49152514586436", "wonderland@redQueen.com", "DE15000523001125", "User",null);
         addUser(alice);
-
-
     }
 
-    //Creating Test Data
-    public Car createCar(){
-            Car car = new Car(
-                    (int)(Math.random() * ((7-2) +1))+2,
-                    null,
-                    "Audi",
-                    "Limousine",
-                    9.9,
-                    5.101030103101,
-                    4.1212100113,
-                    "Available",
-                    "Diesel");
-            return car;
+    public void borrowCar(User user, Car car){
+        //When? (Duration? Return ? Pickup?)
+        //
     }
 
-    public User createUser(){
-        User user1 = new User(
-                new Date(2000,10,25),
-                null,
-                "Max Mustermann",
-                new Address("Heidelberg","Haydnstrasse", "14", "21031"),
-                "+123111222333",
-                "maxmuster@gmail.com",
-                "DE10 1002 3124 2749 1752",
-                "Available",
-                null);
-        return user1;
+    public void returnCar(User user, Car car, Rating rating){
+        //give rating (Maurice)
+        //Timestamp
+    }
+
+    //Use Case 5 Maurice Chrisnach
+    public void calculateCarRating(Car car){
+        //Find all the Rating of the specific car
+    }
+
+    //Use Case 2 Maximilian Schuhmacher
+    public void findHighDemandZone(){
+
     }
 }
