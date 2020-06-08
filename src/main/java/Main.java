@@ -168,7 +168,7 @@ public class Main implements AutoCloseable {
         System.out.println("Successfully added: " + user + " to Neo4J");
     }
 
-    public void storeSearchQuery(Query query, User user, double longitude, double latitude){
+    public void storeSearchQuery(Query query, User user, double longitude, double latitude) {
         //Mongo
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("query");
@@ -187,15 +187,15 @@ public class Main implements AutoCloseable {
             public String execute(Transaction tx) {
                 Result result = tx.run("MATCH (u:User{objectID:$uid})" +
                         "MERGE (l:Location{longitude:$longitude, latitude:$latitude})" +
-                        "WITH (l), (u)"+
-                        "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:today}]-(l)", parameters("uid", user.getObjectID(), "longitutude", longitude, "latitude", latitude,
-                        "radius", query.getRadius(), "date", LocalDate.now()));
+                        "WITH (l), (u)" +
+                        "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)", parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
+                        "radius", query.getRadius(), "today", LocalDate.now()));
                 return "done";
             }
         });
         System.out.println("Successfully added: " + user + " to Neo4J");
     }
-    }
+
 
     public void updateUser(User user) {
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
@@ -264,22 +264,26 @@ public class Main implements AutoCloseable {
         ArrayList<Query> queries = new QueryFactory(50).create();
         createSearches(users, queries);
 
-        for (User user:users             ) {
+        for (User user : users) {
             addUser(user);
+            if (user.getQueries() != null)
+                for (Query query : user.getQueries()) {
+                    storeSearchQuery(query, user, CarFactory.randDouble(-90, 90), CarFactory.randDouble(-180, 180));
+
+                }
         }
 
-        for (Car car:cars             ) {
-            storeCar(car, users.get(QueryFactory.randInt(0,(users.size()-1)/20+1)));
+        for (Car car : cars) {
+            storeCar(car, users.get(QueryFactory.randInt(0, (users.size() - 1) / 20 + 1)));
         }
-
 
 
     }
 
-    //matches search queries and user
+    //matches search queries and user. Also stores them in our DBs
     private void createSearches(ArrayList<User> users, ArrayList<Query> queries) {
         for (Query query : queries) {
-            User user = users.get(QueryFactory.randInt(0,users.size()-1));
+            User user = users.get(QueryFactory.randInt(0, users.size() - 1));
             user.addQuery(query);
         }
     }

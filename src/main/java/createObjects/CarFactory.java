@@ -194,7 +194,7 @@ public class CarFactory {
         return randomNum;
     }
 
-    private static double randDouble(double min, double max){
+    public static double randDouble(double min, double max){
         Random rand = new Random();
         double randomNum =  min + (max - min) * rand.nextDouble();
         return randomNum;

@@ -23,7 +23,7 @@ public class Query implements IStoreableObject {
     }
 
     public void setRadius(int radius) {
-        radius = radius;
+        this.radius = radius;
     }
 
     public void setParameter(List<String> parameter) {
