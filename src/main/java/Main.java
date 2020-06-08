@@ -1,10 +1,12 @@
 
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.BSON;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
@@ -82,9 +84,9 @@ public class Main implements AutoCloseable {
 
     public static void main(String[] args) {
         try (Main main = new Main()) {
-            //main.neo4jTest("hello, world");
-            //main.redisTest("Redishallo");
-            //main.mongoTest("");
+            main.neo4jTest("hello, world");
+            main.redisTest("Redishallo");
+            main.mongoTest("");
             //main.init();
             //main.addUser(main.createUser());
             Car car = main.createCar();
@@ -175,8 +177,9 @@ public class Main implements AutoCloseable {
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = car.toDocument();
-
-        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),doc1);
+        BasicDBObject update= new BasicDBObject();
+        update.put("$set", new Document("Status", car.getStatus()));
+        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),update);
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -185,13 +188,14 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID}) SET c.status=$status",
-                        parameters("$cID", car.getObjectID(),
+                        "MATCH (c:Car{objectID : $c_ID})"+" SET c.status = $status"+" RETURN c.status",
+                        parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus()
                         ));
-                return "done";
+                return result.single().get(0).asString();
             }
         });
+        System.out.println(car.getStatus());
     }
 
     public void updateCarLocation(Car car){
