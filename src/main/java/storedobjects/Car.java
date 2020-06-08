@@ -117,7 +117,7 @@ public class Car implements IStoreableObject{
     public Document toDocument() {
         Document doc = new Document();
         if (objectID != null)
-            doc.append("objectID", objectID);
+            doc.append("_id", objectID);
         if (seats == 0)
             doc.append("seats", seats);
         if (manufacturer != null)
