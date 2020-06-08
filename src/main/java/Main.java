@@ -87,7 +87,10 @@ public class Main implements AutoCloseable {
             //main.mongoTest("");
             //main.init();
             //main.addUser(main.createUser());
-            main.storeCar(main.createCar(),main.createUser());
+            Car car = main.createCar();
+            main.storeCar(car,main.createUser());
+            car.setStatus("Damaged");
+            main.updateCarStatus(car);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -185,7 +188,6 @@ public class Main implements AutoCloseable {
                         "MATCH (c:Car{id:$c_ID}) SET c.status=$status",
                         parameters("$cID", car.getObjectID(),
                                 "status", car.getStatus()
-
                         ));
                 return "done";
             }
