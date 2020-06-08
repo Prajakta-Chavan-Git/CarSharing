@@ -18,4 +18,5 @@ dependencies {
     compile 'org.neo4j.driver:neo4j-java-driver:4.0.1'
     compile 'org.mongodb:mongodb-driver:3.3.0'
     compile 'redis.clients:jedis:2.9.0'
+    compile ('com.byteowls:jopencage:1.2.0')
 }
