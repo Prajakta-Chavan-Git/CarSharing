@@ -293,7 +293,11 @@ public class Main implements AutoCloseable {
         //
     }
 
-    public void returnCar(User user, Car car, Rating rating) {
+    public void returnCar(User user, Car car, Rating rating){
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("rating");
+        Document doc1 = rating.toDocument();
+        mongoCollection.insertOne(doc1);
         //give rating (Maurice)
         //Timestamp
     }
