@@ -67,7 +67,7 @@ public class UserFactory {
 
     private String getRandomName(){
         String name;
-        int randomNum = randInt(0,10);
+        int randomNum = randInt(0,20);
         switch (randomNum){
             case 1:
                 name = "Marcel";
@@ -99,8 +99,38 @@ public class UserFactory {
             case 10:
                 name = "Patrick";
                 break;
+            case 11:
+                name = "Erica";
+                break;
+            case 12:
+                name = "Sarah";
+                break;
+            case 13:
+                name = "Sophia";
+                break;
+            case 14:
+                name = "Alice";
+                break;
+            case 15:
+                name = "Jenna";
+                break;
+            case 16:
+                name = "Morgane";
+                break;
+            case 17:
+                name = "Dominique";
+                break;
+            case 18:
+                name = "Elisa";
+                break;
+            case 19:
+                name = "Kelly";
+                break;
+            case 20:
+                name = "Christine";
+                break;
             default:
-                name = "Jasper";
+                name = "Amanada";
                 break;
         }
         return name;
@@ -154,10 +184,10 @@ public class UserFactory {
         int randomNum = randInt(0,1);
         switch (randomNum){
             case 0:
-                status = "Available";
+                status = "User";
                 break;
             case 1:
-                status = "Occupied";
+                status = "Lender";
                 break;
             default:
                 status = "Undefined";

@@ -159,13 +159,16 @@ public class CarFactory {
 
     private String getRandomStatus(){
         String status;
-        int randomNum = randInt(0,1);
+        int randomNum = randInt(0,2);
         switch (randomNum){
             case 0:
                 status = "Available";
                 break;
             case 1:
                 status = "Occupied";
+                break;
+            case 2:
+                status = "Defective";
                 break;
             default:
                 status = "Undefined";
