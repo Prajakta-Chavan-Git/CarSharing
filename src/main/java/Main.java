@@ -215,7 +215,7 @@ public class Main implements AutoCloseable {
                         "MATCH (c:Car{id:$c_ID})"+
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
-                        parameters("$cID", car.getObjectID(),
+                        parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDate.now()
 
