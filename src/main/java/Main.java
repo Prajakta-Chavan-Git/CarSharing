@@ -91,10 +91,6 @@ public class Main implements AutoCloseable {
             main.mongoTest("");
             //main.init();
             //main.addUser(main.createUser());
-            Car car = main.createCar();
-            main.storeCar(car,main.createUser());
-            car.setStatus("Damaged");
-            main.updateCarStatus(car);
         } catch (Exception e) {
             e.printStackTrace();
         }
