@@ -2,6 +2,8 @@ plugins {
     id 'java-library'
 }
 
+apply plugin: "eclipse"
+
 group 'srh.adb.carsharing'
 version '1.0-SNAPSHOT'
 
