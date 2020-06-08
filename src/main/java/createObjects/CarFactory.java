@@ -52,7 +52,7 @@ public class CarFactory {
         return carL;
     }
 
-    private String getRandomBrand(){
+    public static String getRandomBrand(){
         String brand;
         int randomNum = randInt(0,10);
         switch (randomNum){
@@ -93,7 +93,7 @@ public class CarFactory {
         return brand;
     }
 
-    private String getRandomType(){
+    public static String getRandomType(){
         String type;
         int randomNum = randInt(1,8);
         switch (randomNum){
@@ -128,7 +128,7 @@ public class CarFactory {
         return type;
     }
 
-    private String getRandomFuel(){
+    public static String getRandomFuel(){
         String type;
         int randomNum = randInt(1,6);
         switch (randomNum){
