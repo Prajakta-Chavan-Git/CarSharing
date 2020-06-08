@@ -3,12 +3,5 @@ log
 .gradle
 out
 .idea
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 build
 gradle
->>>>>>> Git ignore update
-=======
-build
->>>>>>> modified git ignore, method: storecar slight change

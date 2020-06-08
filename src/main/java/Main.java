@@ -7,9 +7,8 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import createObjects.CarFactory;
+import createObjects.QueryFactory;
 import createObjects.UserFactory;
-import jdk.vm.ci.aarch64.AArch64;
-import org.bson.BSON;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
@@ -89,8 +88,14 @@ public class Main implements AutoCloseable {
             main.neo4jTest("hello, world");
             main.redisTest("Redishallo");
             main.mongoTest("");
-            //main.init();
+            main.init();
             //main.addUser(main.createUser());
+            //Car car = main.createCar();
+            //main.storeCar(car,main.createUser());
+            //car.setStatus("Damaged");
+            //main.updateCarStatus(car);
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -111,12 +116,12 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "CREATE (a:Car{objectID:$cID, manufacturer: $manufacturer, seats:$seats, type:$type, fuelConsumption:$fuelConsumption, status:$status, fuelType:$fuelType})" +
-                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
-                                "WITH (l)" +
+                        "CREATE (c:Car{objectID:$cID, manufacturer: $manufacturer, seats:$seats, type:$type, fuelConsumption:$fuelConsumption, status:$status, fuelType:$fuelType})" +
+                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})" +
+                                "WITH (l), (c)" +
                                 "MATCH (u:User{objectID:$uID}) " +
-                                "WITH (u)"+
-                                "MERGE (u) -[:OWNES {offeringSince:$today}]-> (c) "+
+                                "WITH (u), (l), (c)" +
+                                "MERGE (u) -[:OWNES {offeringSince:$today}]-> (c) " +
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
                         parameters("$cID", car.getObjectID(),
                                 "manufacturer", car.getManufacturer(),
@@ -163,21 +168,50 @@ public class Main implements AutoCloseable {
         System.out.println("Successfully added: " + user + " to Neo4J");
     }
 
-    public void updateUser(User user){
+    public void storeSearchQuery(Query query, User user, double longitude, double latitude) {
+        //Mongo
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("query");
+        Document doc1 = query.toDocument();
+
+        mongoCollection.insertOne(doc1);
+        System.out.println("Successfully added: " + doc1 + " to MongoDB");
+        query.setObjectID(doc1.getObjectId("_id").toString());
+
+
+        //Neo4j
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run("MATCH (u:User{objectID:$uid})" +
+                        "MERGE (l:Location{longitude:$longitude, latitude:$latitude})" +
+                        "WITH (l), (u)" +
+                        "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)", parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
+                        "radius", query.getRadius(), "today", LocalDate.now()));
+                return "done";
+            }
+        });
+        System.out.println("Successfully added: " + user + " to Neo4J");
+    }
+
+
+    public void updateUser(User user) {
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("user");
         Document doc1 = user.toDocument();
 
-        mongoCollection.findOneAndUpdate(new Document("_id", user.getObjectID()),doc1);
+        mongoCollection.findOneAndUpdate(new Document("_id", user.getObjectID()), doc1);
     }
 
-    public void updateCarStatus(Car car){
+    public void updateCarStatus(Car car) {
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = car.toDocument();
-        BasicDBObject update= new BasicDBObject();
+        BasicDBObject update = new BasicDBObject();
         update.put("$set", new Document("Status", car.getStatus()));
-        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),update);
+        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()), update);
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -186,7 +220,7 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{objectID : $c_ID})"+" SET c.status = $status"+" RETURN c.status",
+                        "MATCH (c:Car{objectID : $c_ID})" + " SET c.status = $status" + " RETURN c.status",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus()
                         ));
@@ -196,12 +230,12 @@ public class Main implements AutoCloseable {
         System.out.println(car.getStatus());
     }
 
-    public void updateCarLocation(Car car){
+    public void updateCarLocation(Car car) {
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = car.toDocument();
 
-        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()),doc1);
+        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()), doc1);
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -210,8 +244,8 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})"+
-                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})"+
+                        "MATCH (c:Car{id:$c_ID})" +
+                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})" +
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
@@ -224,30 +258,53 @@ public class Main implements AutoCloseable {
     }
 
 
+    public void init() {
+        ArrayList<Car> cars = new CarFactory(50).createCars();
+        ArrayList<User> users = new UserFactory(50).createUsers();
+        ArrayList<Query> queries = new QueryFactory(50).create();
+        createSearches(users, queries);
 
-    public void init(){
-        User alice =  new User(new Date(1998,5,23), null, "Alice BlueDress", new Address("Heidelberg", "WonderlandStreet","314", "67123"),
-                "+49152514586436", "wonderland@redQueen.com", "DE15000523001125", "User",null);
-        addUser(alice);
+        for (User user : users) {
+            addUser(user);
+            if (user.getQueries() != null)
+                for (Query query : user.getQueries()) {
+                    storeSearchQuery(query, user, CarFactory.randDouble(-90, 90), CarFactory.randDouble(-180, 180));
+
+                }
+        }
+
+        for (Car car : cars) {
+            storeCar(car, users.get(QueryFactory.randInt(0, (users.size() - 1) / 20 + 1)));
+        }
+
+
     }
 
-    public void borrowCar(User user, Car car){
+    //matches search queries and user. Also stores them in our DBs
+    private void createSearches(ArrayList<User> users, ArrayList<Query> queries) {
+        for (Query query : queries) {
+            User user = users.get(QueryFactory.randInt(0, users.size() - 1));
+            user.addQuery(query);
+        }
+    }
+
+    public void borrowCar(User user, Car car) {
         //When? (Duration? Return ? Pickup?)
         //
     }
 
-    public void returnCar(User user, Car car, Rating rating){
+    public void returnCar(User user, Car car, Rating rating) {
         //give rating (Maurice)
         //Timestamp
     }
 
     //Use Case 5 Maurice Chrisnach
-    public void calculateCarRating(Car car){
+    public void calculateCarRating(Car car) {
         //Find all the Rating of the specific car
     }
 
     //Use Case 2 Maximilian Schuhmacher
-    public void findHighDemandZone(){
+    public void findHighDemandZone() {
 
     }
 }

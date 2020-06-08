@@ -1,10 +1,8 @@
 package createObjects;
 
-import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import storedobjects.Address;
 import storedobjects.User;
 import storedobjects.Comment;
-import sun.jvm.hotspot.oops.ObjArray;
 
 import java.util.ArrayList;
 import java.util.Random;
