@@ -20,7 +20,7 @@ dependencies {
     compile 'redis.clients:jedis:2.9.0'
 <<<<<<< HEAD
     
-}
+
 =======
     // https://mvnrepository.com/artifact/org.neo4j/neo4j-graphdb-api
     compile group: 'org.neo4j', name: 'neo4j-graphdb-api', version: '4.0.5'}
