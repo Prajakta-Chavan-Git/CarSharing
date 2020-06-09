@@ -8,7 +8,7 @@ import org.bson.Document;
 
 public class Price {
 	
-	private String address;
+	private String district;
 	private Car car;
 	
 	public Price(Car car){
@@ -27,6 +27,8 @@ public class Price {
 	request.setNoAnnotations(true);
 
 	private JOpenCageResponse response = jOpenCageGeocoder.reverse(request);
+	
+	district = response.results[0].componets.city_district;
 	
 
 	

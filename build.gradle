@@ -18,5 +18,13 @@ dependencies {
     compile 'org.neo4j.driver:neo4j-java-driver:4.0.1'
     compile 'org.mongodb:mongodb-driver:3.3.0'
     compile 'redis.clients:jedis:2.9.0'
-    compile ('com.byteowls:jopencage:1.2.0')
+<<<<<<< HEAD
+    
+}
+=======
+    // https://mvnrepository.com/artifact/org.neo4j/neo4j-graphdb-api
+    compile group: 'org.neo4j', name: 'neo4j-graphdb-api', version: '4.0.5'}
+>>>>>>> 99125d456852c2e4769c840cab85abe709384096
+
+	compile ('com.byteowls:jopencage:1.2.0')
 }
