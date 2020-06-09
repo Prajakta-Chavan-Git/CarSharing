@@ -70,9 +70,9 @@ public class District {
 		try (Session session = driverNeo4j.session())
         {
             
-            Result result = session.run(
-                    "MATCH (n:Car)-[:LOCATES]->(m:Location {district: $district})RETURN count(n)",
-                    parameters("district", district));
+            Result result = session.run("MATCH (n:Car)-[:LOCATES]->(m:Location {district: $district})"
+            		+ " RETURN count(n)",
+            		parameters("district", district));
             amount = Integer.parseInt(result.toString());
         }
 		
@@ -85,9 +85,14 @@ public class District {
 
 	//determine price of this district by #cars
 	private double getPrice() {
+		double price;
+		int carAmount = new District(car).getCarAmount();
 		
-		return 1.0;
+		if(carAmount <= 5) price = 2.0;
+		else if(carAmount <= 10) price = 1.5;
+		else price = 1.0;
 		
+		return price;	
 	}
 	
 	//caching high requested data into redis
