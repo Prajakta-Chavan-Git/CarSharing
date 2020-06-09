@@ -6,15 +6,27 @@ import com.byteowls.jopencage.model.JOpenCageReverseRequest;
 import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.neo4j.driver.*;
+import redis.clients.jedis.Jedis;
+import com.mongodb.client.MongoDatabase; 
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential; 
 
 
 public class District {
 	
 	private Car car;
 	private String district;
+	private final Driver driverNeo4j;
+    private final Jedis driverRedis;
+    private final MongoClient mongoClient;
 	
 	public District(Car car){
 		this.car = car;
+		driverNeo4j = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "WJ7cbBLbwvuDaFF"));
+        driverRedis = new Jedis("localhost");
+        mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
 	}
 	
 	
@@ -52,12 +64,25 @@ public class District {
 	
 	//calculate #cars in the district
 	private int getCarAmount() {
+		int amount;
 		
-		return 0;
+		try (Session session = driverNeo4j.session())
+        {
+            
+            Result result = session.run(
+                    "MATCH (n:Car)-[:LOCATES]->(m:Location {district: $district})RETURN count(n)",
+                    parameters("district", district));
+            amount = Integer.parseInt(result.toString());
+        }
+		
+		return amount;
 		
 	}
 		
-	//determine price of this district by the #cars in it
+
+
+
+	//determine price of this district by #cars
 	private double getPrice() {
 		
 		return 1.0;
