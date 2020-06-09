@@ -4,12 +4,14 @@ import com.byteowls.jopencage.JOpenCageGeocoder;
 import com.byteowls.jopencage.model.JOpenCageResponse;
 import com.byteowls.jopencage.model.JOpenCageReverseRequest;
 import org.bson.Document;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 public class Price {
 	
-	private String district;
 	private Car car;
+	private String district;
 	
 	public Price(Car car){
 		this.car = car;
@@ -33,7 +35,16 @@ public class Price {
 
 		JOpenCageResponse response = jOpenCageGeocoder.reverse(request);
 		
-		return district = response.results[0].componets.city_district;
+		JSONObject obj = new JSONObject(response);
+        
+        JSONArray arr = obj.getJSONArray("results");
+        for (int i = 0; i < arr.length(); i++) {
+        	
+            district = arr.getJSONObject(i).getJSONObject("components").getString("city_district");
+            
+        }
+		
+		return district;
 		 
 	}
 	
