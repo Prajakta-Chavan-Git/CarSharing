@@ -22,8 +22,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import org.neo4j.graphdb.spatial.Geometry;
+import org.neo4j.graphdb.spatial.Point;
 
 import static org.neo4j.driver.Values.parameters;
+//import static org.neo4j.driver.Values.
 
 //import static org.neo4j.driver.v1.Values.parameters;
 
