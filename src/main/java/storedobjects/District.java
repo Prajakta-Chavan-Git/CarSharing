@@ -8,12 +8,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 
-public class Price {
+public class District {
 	
 	private Car car;
 	private String district;
 	
-	public Price(Car car){
+	public District(Car car){
 		this.car = car;
 	}
 	
@@ -50,20 +50,24 @@ public class Price {
 		 
 	}
 	
-	
-	
-
-	
-	//caching district of a car into redis
-	
-	
 	//calculate #cars in the district
-	
-	
+	private int getCarAmount() {
+		
+		return 0;
+		
+	}
+		
 	//determine price of this district by the #cars in it
+	private double getPrice() {
+		
+		return 1.0;
+		
+	}
+	
+	//caching high requested data into redis
 	
 	
-	//caching data into redis and store it into mongodb
+	//store data necessary into mongodb
 	
 	
 	public static void main(String[] args) {
