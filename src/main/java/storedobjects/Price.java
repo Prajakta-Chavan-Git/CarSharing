@@ -15,20 +15,29 @@ public class Price {
 		this.car = car;
 	}
 	
-	//get geo-location of car
-	private double lng = car.getLongitude();
-	private double lat = car.getLatitude();
+	
 	
 	//find district of car
-	private JOpenCageGeocoder jOpenCageGeocoder = new JOpenCageGeocoder(API_KEY);
+	private String getDistrict() {
+		
+		//get geo-location of car
+		double lng = car.getLongitude();
+		double lat = car.getLatitude();
+		
+		//transfer coordinates to district address
+		JOpenCageGeocoder jOpenCageGeocoder = new JOpenCageGeocoder(API_KEY);
 
-	private JOpenCageReverseRequest request = new JOpenCageReverseRequest(lat, lng);
-	
-	request.setNoAnnotations(true);
+		JOpenCageReverseRequest request = new JOpenCageReverseRequest(lat, lng);
+		
+		request.setNoAnnotations(true);
 
-	private JOpenCageResponse response = jOpenCageGeocoder.reverse(request);
+		JOpenCageResponse response = jOpenCageGeocoder.reverse(request);
+		
+		return district = response.results[0].componets.city_district;
+		 
+	}
 	
-	district = response.results[0].componets.city_district;
+	
 	
 
 	
