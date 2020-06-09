@@ -65,6 +65,7 @@ public class District {
 	//calculate #cars in the district
 	private int getCarAmount() {
 		int amount;
+		String district = new District(car).getDistrict();
 		
 		try (Session session = driverNeo4j.session())
         {
