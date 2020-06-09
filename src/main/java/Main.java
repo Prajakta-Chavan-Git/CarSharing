@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import org.neo4j.graphdb.spatial.Geometry;
-import org.neo4j.graphdb.spatial.Point;
+//import org.neo4j.graphdb.spatial.Geometry;
+//import org.neo4j.graphdb.spatial.Point;
 
 import static org.neo4j.driver.Values.parameters;
 //import static org.neo4j.driver.Values.
@@ -171,7 +171,7 @@ public class Main implements AutoCloseable {
         System.out.println("Successfully added: " + user + " to Neo4J");
     }
 
-    public void storeSearchQuery(Query query, User user, double longitude, double latitude) {
+    public void storeSearchQuery(Query query, User user, double latitude, double longitude) {
         //Mongo
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("query");
@@ -188,10 +188,16 @@ public class Main implements AutoCloseable {
 
             @Override
             public String execute(Transaction tx) {
-                Result result = tx.run("MATCH (u:User{objectID:$uid})" +
-                        "MERGE (l:Location{longitude:$longitude, latitude:$latitude})" +
-                        "WITH (l), (u)" +
-                        "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)", parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
+                Result result = tx.run("MATCH (u:User{objectID:$uid}) " +
+                        "MERGE (l:Location{longitude:$longitude, latitude:$latitude}) " +
+                "WITH (l),(u) " +
+                "MATCH (old:Location{}) " +
+                "WITH (u),(l),(old), " +
+                "ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: old.longitude, latitude: old.latitude }))) as dist "+
+                "WHERE dist<50000 AND NOT id(l) = id(old) " +
+                "CREATE (l)-[:Dist{value:dist}]->(old) " +
+                "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
+                ,parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
                         "radius", query.getRadius(), "today", LocalDate.now()));
                 return "done";
             }
@@ -271,7 +277,7 @@ public class Main implements AutoCloseable {
             addUser(user);
             if (user.getQueries() != null)
                 for (Query query : user.getQueries()) {
-                    storeSearchQuery(query, user, CarFactory.randDouble(-90, 90), CarFactory.randDouble(-180, 180));
+                    storeSearchQuery(query, user, CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10));
 
                 }
         }
