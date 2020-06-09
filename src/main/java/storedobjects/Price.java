@@ -35,9 +35,11 @@ public class Price {
 
 		JOpenCageResponse response = jOpenCageGeocoder.reverse(request);
 		
+		//handle the json response to get the district of car
 		JSONObject obj = new JSONObject(response);
         
         JSONArray arr = obj.getJSONArray("results");
+        
         for (int i = 0; i < arr.length(); i++) {
         	
             district = arr.getJSONObject(i).getJSONObject("components").getString("city_district");
