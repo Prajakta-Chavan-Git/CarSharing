@@ -20,10 +20,8 @@ import storedobjects.Query;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.time.LocalDateTime;
+import java.util.*;
 //import org.neo4j.graphdb.spatial.Geometry;
 //import org.neo4j.graphdb.spatial.Point;
 
@@ -292,6 +290,21 @@ public class Main implements AutoCloseable {
             storeCar(car, users.get(QueryFactory.randInt(0, (users.size() - 1) / 20 + 1)));
         }
 
+        for(Rating rating: ratings){
+            User user = users.get(QueryFactory.randInt(0, (users.size() - 1)));
+            Car car = cars.get(QueryFactory.randInt(0, (cars.size() - 1)));
+
+            rating.setCar(car);
+            rating.setUser(user);
+
+            Calendar cal = Calendar.getInstance(); // creates calendar
+            cal.setTime(new Date()); // sets calendar time/date
+            cal.add(Calendar.HOUR_OF_DAY, 2); // adds one hour
+
+            borrowCar(user,car, LocalDateTime.now(),cal.getTime());
+            returnCar(user, car, rating,CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10));
+        }
+
 
     }
 
@@ -303,7 +316,7 @@ public class Main implements AutoCloseable {
         }
     }
 
-    public void borrowCar(User user, Car car, Timestamp from, Timestamp till) {
+    public void borrowCar(User user, Car car, LocalDateTime from, Date till) {
 
 
         Session session = driverNeo4j.session();
