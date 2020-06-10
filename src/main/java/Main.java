@@ -418,5 +418,27 @@ public class Main implements AutoCloseable {
     //Use Case 2 Maximilian Schuhmacher
     public void findHighDemandZone() {
 
+        /*
+MERGE (a:Area{longitude:8.5, latitude:49.53})
+WITH (a)
+MATCH(l:Location)
+WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: a.longitude, latitude: a.latitude }))) < 100000
+WITH(a),(l)
+MERGE (a)-[:HAS]->(l)
+WITH (l),(a)
+OPTIONAL MATCH (l)<-[:WAITING_HERE]-(c)
+OPTIONAL MATCH (l)<-[:LOOKING_FOR_CARS]-(u)
+RETURN count(c),count(u)
+
+____
+MATCH (l:Location)
+WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: $longitude, latitude: $latitude}))) < $areaSize
+OPTIONAL MATCH (l)<-[:WAITING_HERE]-(c)
+OPTIONAL MATCH (l)<-[:LOOKING_FOR_CARS]-(u)
+RETURN count(c), count(u)
+
+         */
+
+
     }
 }
