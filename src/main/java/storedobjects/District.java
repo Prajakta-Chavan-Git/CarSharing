@@ -111,8 +111,5 @@ public class District {
 	//store data necessary into mongodb
 	
 	
-	public static void main(String[] args) {
-		
-	}
 	
 }
