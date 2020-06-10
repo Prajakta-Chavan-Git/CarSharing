@@ -57,6 +57,9 @@ public class District {
             district = arr.getJSONObject(i).getJSONObject("components").getString("city_district");
             
         }
+        
+        //caching district of this car into Redis
+        driverRedis.set(car.getObjectID() + "_district", district);
 		
 		return district;
 		 
@@ -65,7 +68,9 @@ public class District {
 	//calculate #cars in the district
 	private int getCarAmount() {
 		int amount;
-		String district = new District(car).getDistrict();
+		
+		//retrieving district from redis cache
+		String district = driverRedis.get(car.getObjectID() + "_district");
 		
 		try (Session session = driverNeo4j.session())
         {
@@ -75,6 +80,9 @@ public class District {
             		parameters("district", district));
             amount = Integer.parseInt(result.toString());
         }
+		
+		//caching #car into Redis
+        driverRedis.incr(district + "_car_amount");
 		
 		return amount;
 		
@@ -86,16 +94,18 @@ public class District {
 	//determine price of this district by #cars
 	private double getPrice() {
 		double price;
-		int carAmount = new District(car).getCarAmount();
 		
-		if(carAmount <= 5) price = 2.0;
+		//retrieving car amount from redis
+		int carAmount = Integer.parseInt(driverRedis.get(district + "_car_amount"));
+		
+		if(carAmount <= 5) price = 2.0;       //per kilometer
 		else if(carAmount <= 10) price = 1.5;
 		else price = 1.0;
 		
 		return price;	
 	}
 	
-	//caching high requested data into redis
+	
 	
 	
 	//store data necessary into mongodb
