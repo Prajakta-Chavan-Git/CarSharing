@@ -17,6 +17,7 @@ import redis.clients.jedis.Jedis;
 import storedobjects.*;
 import storedobjects.Query;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
@@ -298,9 +299,29 @@ public class Main implements AutoCloseable {
         }
     }
 
-    public void borrowCar(User user, Car car) {
-        //When? (Duration? Return ? Pickup?)
-        //
+    public void borrowCar(User user, Car car, Timestamp from, Timestamp till) {
+
+
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH (c:Car{id:$c_ID})" +
+                                "MATCH (u:User{id:$u_ID}" +
+                                "WITH (u), (c)" +
+                                "MERGE (u) -[b:BORROWS{from:$from, till:$till}]->(c)"
+                                ,
+                        parameters("c_ID", car.getObjectID(),
+                                "c_ID", user.getObjectID(),
+                                "from", from,
+                                "till", till,
+                                "u_ID", car.getObjectID()
+                        ));
+                return "done";
+            }
+        });
     }
 
     public void returnCar(User user, Car car, Rating rating) {
