@@ -80,6 +80,12 @@ public class Rating implements IStoreableObject {
         this.user = user;
         this.car = car;
     }
+    public Rating(int cleanliness, int comfort, int reliability, String comment){
+        this.cleanliness = cleanliness;
+        this.comfort = comfort;
+        this.comment = comment;
+        this.reliability = reliability;
+    }
 
     @Override
     public Document toDocument() {
