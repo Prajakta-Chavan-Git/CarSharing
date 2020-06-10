@@ -33,12 +33,13 @@ public class ReviewFactory {
 
     public ArrayList<Rating> createReviews(){
         ArrayList reviewL = new ArrayList<Rating>();
-        for (int i = 0; i < getAmount(); i++) {
+        for (int i = 0; i < amount; i++) {
             int clean = randInt(0,5);
             int realy = randInt(0,5);
             int comfort = randInt(0,5);
             String comment = generateComment();
             Rating rating = new Rating(clean,comfort,realy,comment);
+            reviewL.add(rating);
         }
         return reviewL;
     }

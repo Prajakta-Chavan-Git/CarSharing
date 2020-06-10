@@ -101,9 +101,9 @@ public class Rating implements IStoreableObject {
         if (comment != null)
             doc.append("comment", comment);
         if (user != null)
-            doc.append("user", user);
+            doc.append("user", user.getObjectID());
         if (car != null)
-            doc.append("car", car);
+            doc.append("car", car.getObjectID());
         return doc;
     }
 }

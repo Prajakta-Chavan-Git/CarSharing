@@ -271,10 +271,10 @@ public class Main implements AutoCloseable {
 
 
     public void init() {
-        ArrayList<Car> cars = new CarFactory(50).createCars();
-        ArrayList<User> users = new UserFactory(50).createUsers();
+        ArrayList<Car> cars = new CarFactory(50).getCarList();
+        ArrayList<User> users = new UserFactory(50).getUserList();
         ArrayList<Query> queries = new QueryFactory(50).create();
-        ArrayList<Rating> ratings = new ReviewFactory(50).createReviews();
+        ArrayList<Rating> ratings = new ReviewFactory(50).getRatingList();
         createSearches(users, queries);
 
         for (User user : users) {
@@ -289,7 +289,6 @@ public class Main implements AutoCloseable {
         for (Car car : cars) {
             storeCar(car, users.get(QueryFactory.randInt(0, (users.size() - 1) / 20 + 1)));
         }
-
         for(Rating rating: ratings){
             User user = users.get(QueryFactory.randInt(0, (users.size() - 1)));
             Car car = cars.get(QueryFactory.randInt(0, (cars.size() - 1)));
@@ -324,17 +323,16 @@ public class Main implements AutoCloseable {
 
             @Override
             public String execute(Transaction tx) {
+
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})" +
-                                "MATCH (u:User{id:$u_ID}" +
+                        "MATCH (c:Car{objectID:'$cID'}), (u:User{objectID:'$uID'})" +
                                 "WITH (u), (c)" +
                                 "MERGE (u) -[b:BORROWS{from:$from, till:$till}]->(c)"
                                 ,
-                        parameters("c_ID", car.getObjectID(),
-                                "c_ID", user.getObjectID(),
-                                "from", from,
-                                "till", till,
-                                "u_ID", car.getObjectID()
+                        parameters("cID", car.getObjectID(),
+                                "from", from.toString(),
+                                "till", till.toString(),
+                                "uID", user.getObjectID()
                         ));
                 return "done";
             }
@@ -357,23 +355,27 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})" +
-                                "MATCH (u:User{id:$u_ID}" +
-                                "SET c.status = $status" +
-                                "MATCH (u) -[b:BORROWS]->(c)" +
-                                "SET b.returned = $today" +
-                                "WITH (u), (c)" +
-                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude})" +
+                        "MATCH (c:Car{objectID:$c_ID}) " +
+                                "MATCH (u:User{objectID:$u_ID}) " +
+                                "SET c.status = $status " +
+                                "WITH (c),(u)" +
+                                "MATCH (u) -[b:BORROWS]->(c) " +
+                                "SET b.returned = $today " +
+                                "WITH (u), (c) " +
+                                "MERGE (l: Location{longitude:$longitude, latitude:$latitude}) " +
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) " +
-                                "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today]-> (c)" +
-                                "MERGE (c) -[:BORROWS {returned:$today}]-> (c) ",
+                                "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today}]-> (c) " +
+                                "MERGE (c) -[:BORROWS{returned:$today}]-> (c) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDate.now(),
                                 "clean", rating.getCleanliness(),
                                 "reliable", rating.getReliability(),
                                 "comfort", rating.getComfort(),
-                                "comment", rating.getComments()
+                                "comment", rating.getComments(),
+                                "u_ID", user.getObjectID(),
+                                "longitude", longitude,
+                                "latitude",latitude
                         ));
                 return "done";
             }
