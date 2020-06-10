@@ -139,7 +139,7 @@ public class Main implements AutoCloseable {
                                 "fuelType", car.getFuelType(),
                                 "uID", owner.getObjectID(),
                                 "cID", car.getObjectID(),
-                                "today", LocalDate.now()
+                                "today", LocalDateTime.now()
                         ));
                 return "done";
             }
@@ -198,10 +198,10 @@ public class Main implements AutoCloseable {
                 "ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: old.longitude, latitude: old.latitude }))) as dist "+
                 "WHERE dist<50000 AND NOT id(l) = id(old) " +
                 "MERGE (l)-[:Dist{value:dist}]->(old) " +
-                "MERGE (l)<-[:Dist{value:dist}]-(old) " +
+                //"MERGE (l)<-[:Dist{value:dist}]-(old) " +
                 "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
                 ,parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
-                        "radius", query.getRadius(), "today", LocalDate.now()));
+                        "radius", query.getRadius(), "today", LocalDateTime.now()));
                 return "done";
             }
         });
@@ -261,7 +261,7 @@ public class Main implements AutoCloseable {
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
-                                "today", LocalDate.now()
+                                "today", LocalDateTime.now()
 
                         ));
                 return "done";
@@ -301,7 +301,7 @@ public class Main implements AutoCloseable {
             cal.add(Calendar.HOUR_OF_DAY, 2); // adds one hour
 
             borrowCar(user,car, LocalDateTime.now(),cal.getTime());
-            returnCar(user, car, rating,CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10));
+            returnCar(user, car, rating,CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10),CarFactory.randDouble(1,100) );
         }
 
 
@@ -325,7 +325,7 @@ public class Main implements AutoCloseable {
             public String execute(Transaction tx) {
 
                 Result result = tx.run(
-                        "MATCH (c:Car{objectID:'$cID'}), (u:User{objectID:'$uID'})" +
+                        "MATCH (c:Car{objectID:$cID}), (u:User{objectID:$uID})" +
                                 "WITH (u), (c)" +
                                 "MERGE (u) -[b:BORROWS{from:$from, till:$till}]->(c)"
                                 ,
@@ -339,7 +339,7 @@ public class Main implements AutoCloseable {
         });
     }
 
-    public void returnCar(User user, Car car, Rating rating, double latitude, double longitude){
+    public void returnCar(User user, Car car, Rating rating, double latitude, double longitude, double km){
 
         //Update Status of Car, Save the Raing in Mongo DB
         car.setStatus("Available");
@@ -365,17 +365,18 @@ public class Main implements AutoCloseable {
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude}) " +
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) " +
                                 "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today}]-> (c) " +
-                                "MERGE (c) -[:BORROWS{returned:$today}]-> (c) ",
+                                "MERGE (u) -[:BORROWS{returned:$today, km:$km}]-> (c) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
-                                "today", LocalDate.now(),
+                                "today", LocalDateTime.now(),
                                 "clean", rating.getCleanliness(),
                                 "reliable", rating.getReliability(),
                                 "comfort", rating.getComfort(),
                                 "comment", rating.getComments(),
                                 "u_ID", user.getObjectID(),
                                 "longitude", longitude,
-                                "latitude",latitude
+                                "latitude",latitude,
+                                "km", km
                         ));
                 return "done";
             }
