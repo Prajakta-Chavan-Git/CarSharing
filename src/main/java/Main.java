@@ -195,7 +195,8 @@ public class Main implements AutoCloseable {
                 "WITH (u),(l),(old), " +
                 "ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: old.longitude, latitude: old.latitude }))) as dist "+
                 "WHERE dist<50000 AND NOT id(l) = id(old) " +
-                "CREATE (l)-[:Dist{value:dist}]->(old) " +
+                "MERGE (l)-[:Dist{value:dist}]->(old) " +
+                "MERGE (l)<-[:Dist{value:dist}]-(old) " +
                 "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
                 ,parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
                         "radius", query.getRadius(), "today", LocalDate.now()));
