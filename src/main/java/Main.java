@@ -342,12 +342,12 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})" +
-                                //get all car ratings and calculate the avg.
+                        "MATCH (c:Car{id:$c_ID})<-[:GIVES_RATING]-(ratings)" +
+                                "RETURN avg(ratings.CLEAN, ratings.RELIABLE, ratings.COMFORT)",
                         parameters(
                                 "$cID", car.getObjectID()
                         ));
-                return "done";
+                return result.single().get(0).asString();
             }
         });
         return rating;
