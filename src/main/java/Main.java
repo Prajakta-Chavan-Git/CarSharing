@@ -304,6 +304,12 @@ public class Main implements AutoCloseable {
             returnCar(user, car, rating,CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10),CarFactory.randDouble(1,100) );
         }
 
+        for (Car car: cars
+             ) {
+            System.out.println(car.getObjectID());
+            calculateCarRating(car);
+
+        }
 
     }
 
@@ -394,14 +400,18 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})<-[rating:GIVES_RATING]-(:User)" +
-                                "RETURN avg(rating.CLEAN, rating.RELIABLE, rating.COMFORT)",
+                        "MATCH (c:Car{objectID:$c_ID})<-[rating:GIVES_RATING]-() " +
+                                "RETURN avg(rating.CLEAN), rating.RELIABLE, rating.COMFORT",
                         parameters(
-                                "$cID", car.getObjectID()
+                                "c_ID", car.getObjectID()
                         ));
-                return result.single().get(0).asString();
+                if(!result.hasNext()) return "0";
+                String retResult = "";
+
+                return result.next().get(0).toString();
             }
         });
+        System.out.println(greeting);
         return rating;
     }
 
