@@ -8,6 +8,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import createObjects.CarFactory;
 import createObjects.QueryFactory;
+import createObjects.ReviewFactory;
 import createObjects.UserFactory;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -264,6 +265,7 @@ public class Main implements AutoCloseable {
         ArrayList<Car> cars = new CarFactory(50).createCars();
         ArrayList<User> users = new UserFactory(50).createUsers();
         ArrayList<Query> queries = new QueryFactory(50).create();
+        ArrayList<Rating> ratings = new ReviewFactory(50).createReviews();
         createSearches(users, queries);
 
         for (User user : users) {
@@ -314,10 +316,13 @@ public class Main implements AutoCloseable {
                         "MATCH (c:Car{id:$c_ID})" +
                                 "MATCH (u:User{id:$u_ID}" +
                                 "SET c.status = $status" +
-                                "WITH (u), (l), (c)" +
+                                "MATCH (u) -[b:BORROWS]->(c)" +
+                                "SET b.returned = $today" +
+                                "WITH (u), (c)" +
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude})" +
                                 "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) " +
-                                "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment]-> (c)",
+                                "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today]-> (c)" +
+                                "MERGE (c) -[:BORROWS {returned:$today}]-> (c) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDate.now(),
@@ -342,8 +347,8 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{id:$c_ID})<-[:GIVES_RATING]-(ratings)" +
-                                "RETURN avg(ratings.CLEAN, ratings.RELIABLE, ratings.COMFORT)",
+                        "MATCH (c:Car{id:$c_ID})<-[rating:GIVES_RATING]-(:User)" +
+                                "RETURN avg(rating.CLEAN, rating.RELIABLE, rating.COMFORT)",
                         parameters(
                                 "$cID", car.getObjectID()
                         ));
