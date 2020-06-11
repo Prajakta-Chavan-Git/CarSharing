@@ -1,6 +1,7 @@
 version: '2'
 services:
   redis-master:
+
     image: redis
     volumes:
       - "./data:/data"

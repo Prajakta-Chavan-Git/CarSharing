@@ -91,7 +91,7 @@ public class Main implements AutoCloseable {
             //main.neo4jTest("hello, world");
             //main.redisTest("Redishallo");
             //main.mongoTest("");
-            main.init();
+            //main.init();
             //CarFactory carfactory = new CarFactory(100);
             //carfactory.getCarList();
             //main.addUser(main.createUser());
@@ -99,6 +99,7 @@ public class Main implements AutoCloseable {
             //main.storeCar(car,main.createUser());
             //car.setStatus("Damaged");
             //main.updateCarStatus(car);
+            main.demandArea(8.3,49.3,50000,2020,6);
 
 
         } catch (Exception e) {
@@ -127,7 +128,7 @@ public class Main implements AutoCloseable {
                                 "MATCH (u:User{objectID:$uID}) " +
                                 "WITH (u), (l), (c)" +
                                 "MERGE (u) -[:OWNES {offeringSince:$today}]-> (c) " +
-                                "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
+                                "MERGE (c) -[:WAITING_HERE {from:$today}]-> (l) ",
                         parameters("$cID", car.getObjectID(),
                                 "manufacturer", car.getManufacturer(),
                                 "seats", car.getSeats(),
@@ -239,7 +240,6 @@ public class Main implements AutoCloseable {
                 return result.single().get(0).asString();
             }
         });
-        System.out.println(car.getStatus());
     }
 
     public void updateCarLocation(Car car) {
@@ -258,7 +258,7 @@ public class Main implements AutoCloseable {
                 Result result = tx.run(
                         "MATCH (c:Car{id:$c_ID})" +
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude})" +
-                                "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) ",
+                                "MERGE (c) -[:WAITING_HERE {from:$today}]-> (l) ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDateTime.now()
@@ -369,7 +369,7 @@ public class Main implements AutoCloseable {
                                 "SET b.returned = $today " +
                                 "WITH (u), (c) " +
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude}) " +
-                                "MERGE (c) -[:WAITING_HERE {FROM:$today}]-> (l) " +
+                                "MERGE (c) -[:WAITING_HERE {from:$today}]-> (l) " +
                                 "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today}]-> (c) " +
                                 "MERGE (u) -[:BORROWS{returned:$today, km:$km}]-> (c) ",
                         parameters("c_ID", car.getObjectID(),
@@ -416,29 +416,52 @@ public class Main implements AutoCloseable {
     }
 
     //Use Case 2 Maximilian Schuhmacher
+
     public void findHighDemandZone() {
 
-        /*
-MERGE (a:Area{longitude:8.5, latitude:49.53})
-WITH (a)
-MATCH(l:Location)
-WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: a.longitude, latitude: a.latitude }))) < 100000
-WITH(a),(l)
-MERGE (a)-[:HAS]->(l)
-WITH (l),(a)
-OPTIONAL MATCH (l)<-[:WAITING_HERE]-(c)
-OPTIONAL MATCH (l)<-[:LOOKING_FOR_CARS]-(u)
-RETURN count(c),count(u)
+    }
 
-____
+    public ArrayList<Integer> demandArea(double longitude, double latitude, int areaSize, int year, int month) {
+
+/*____
 MATCH (l:Location)
-WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: $longitude, latitude: $latitude}))) < $areaSize
-OPTIONAL MATCH (l)<-[:WAITING_HERE]-(c)
-OPTIONAL MATCH (l)<-[:LOOKING_FOR_CARS]-(u)
-RETURN count(c), count(u)
-
+WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: 8.3, latitude: 49.3}))) < 50000
+OPTIONAL MATCH  (l)<-[s:LOOKING_FOR_CARS]-(u)
+WHERE (s.date.year = 2020 AND s.date.month=6)
+WITH l,s,u
+OPTIONAL MATCH (l)<-[w:WAITING_HERE]-(c)
+WHERE (w.from.month<=6 AND (w.till.month>=6 OR w.till IS NULL) AND w.from.year<=2020 AND (w.till.year>=2020 OR w.till IS NULL))
+RETURN count(distinct (c)), count(u)
          */
 
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH (l:Location) " +
+                                "WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: $longitude, latitude: $latitude}))) < $areaSize " +
+                                "OPTIONAL MATCH  (l)<-[s:LOOKING_FOR_CARS]-(u) " +
+                                "WHERE (s.date.year = $year AND s.date.month=$month) " +
+                                "WITH l,s,u " +
+                                "OPTIONAL MATCH (l)<-[w:WAITING_HERE]-(c) " +
+                                "WHERE (w.from.month<=$month AND (w.till.month>=$month OR w.till IS NULL) AND w.from.year<=$year AND (w.till.year>=$year OR w.till IS NULL)) " +
+                                "RETURN count(distinct (c)), count(u)",
+                        parameters(
+                                "longitude", longitude, "latitude", latitude, "month", month, "year", year, "areaSize",areaSize
+                        ));
+                Record record = result.single();
+                String retResult = record.get(0).toString() + ":" + record.get(1).toString();
+
+                return retResult;
+            }
+        });
+        String[] string = greeting.split(":");
+        ArrayList<Integer> result = new ArrayList<>();
+        result.add(Integer.parseInt(string[0]));
+        result.add(Integer.parseInt(string[1]));
+        return result;
 
     }
 }
