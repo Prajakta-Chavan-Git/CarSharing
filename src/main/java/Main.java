@@ -19,6 +19,7 @@ import storedobjects.*;
 import storedobjects.Query;
 
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -239,7 +240,6 @@ public class Main implements AutoCloseable {
                 return result.single().get(0).asString();
             }
         });
-        System.out.println(car.getStatus());
     }
 
     public void updateCarLocation(Car car) {
@@ -306,9 +306,7 @@ public class Main implements AutoCloseable {
 
         for (Car car: cars
              ) {
-            System.out.println(car.getObjectID());
-            calculateCarRating(car);
-
+            System.out.println("Car rating: " + calculateCarRating(car));
         }
 
     }
@@ -345,16 +343,20 @@ public class Main implements AutoCloseable {
         });
     }
 
+    //Part of UC 5
     public void returnCar(User user, Car car, Rating rating, double latitude, double longitude, double km){
 
         //Update Status of Car, Save the Raing in Mongo DB
         car.setStatus("Available");
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
-        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("rating");
+
+        //Store car review
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("review");
         Document doc1 = rating.toDocument();
         mongoCollection.insertOne(doc1);
         updateCarStatus(car);
 
+        //Create Review Relations
         Session session = driverNeo4j.session();
         String greeting = session.writeTransaction(new TransactionWork<String>() {
 
@@ -387,32 +389,30 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
-        //give rating (Maurice)
-        //Timestamp
     }
 
     //Use Case 5 Maurice Chrisnach
     public double calculateCarRating(Car car) {
-        double rating = 0;
+        //calculate Car rating
         Session session = driverNeo4j.session();
-        String greeting = session.writeTransaction(new TransactionWork<String>() {
+        String rating = session.writeTransaction(new TransactionWork<String>() {
 
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
                         "MATCH (c:Car{objectID:$c_ID})<-[rating:GIVES_RATING]-() " +
-                                "RETURN avg(rating.CLEAN), rating.RELIABLE, rating.COMFORT",
+                                "RETURN apoc.number.format(((avg(rating.RELIABLE) + avg(rating.CLEAN) + avg(rating.COMFORT))/3), '#.#')",
                         parameters(
                                 "c_ID", car.getObjectID()
                         ));
-                if(!result.hasNext()) return "0";
-                String retResult = "";
-
                 return result.next().get(0).toString();
             }
         });
-        System.out.println(greeting);
-        return rating;
+        double carRating = 0;
+        if(rating != "NULL"){
+            carRating = Double.parseDouble(rating.replace('\"',' '));
+        }
+        return carRating;
     }
 
     //Use Case 2 Maximilian Schuhmacher
