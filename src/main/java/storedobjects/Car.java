@@ -17,6 +17,16 @@ public class Car implements IStoreableObject{
     private String status;
     private String fuelType;
     private ArrayList<Comment> comments;
+    private double expenses;
+
+    public double getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(double expenses) {
+        this.expenses = expenses;
+    }
+
 
     public int getSeats() {
         return seats;
@@ -101,7 +111,7 @@ public class Car implements IStoreableObject{
             objectID=pID;
     }
 
-    public Car(int seats, String objectID, String manufacturer, String carType, double fuelConsumption, double longitude, double latitude, String status, String fuelType) {
+    public Car(int seats, String objectID, String manufacturer, String carType, double fuelConsumption, double longitude, double latitude, String status, String fuelType, double expenses) {
         this.seats = seats;
         this.objectID = objectID;
         this.manufacturer = manufacturer;
@@ -111,13 +121,12 @@ public class Car implements IStoreableObject{
         this.latitude = latitude;
         this.status = status;
         this.fuelType = fuelType;
+        this.expenses = expenses;
     }
 
     @Override
     public Document toDocument() {
         Document doc = new Document();
-        if (objectID != null)
-            doc.append("_id", objectID);
         if (seats == 0)
             doc.append("seats", seats);
         if (manufacturer != null)
@@ -126,10 +135,12 @@ public class Car implements IStoreableObject{
             doc.append("carType", carType);
         if (fuelConsumption == 0)
             doc.append("fuelConsumption", fuelConsumption);
-        if (longitude ==0)
+        if (longitude ==-360)
             doc.append("longitude", longitude);
-        if (latitude ==0)
+        if (latitude ==-360)
             doc.append("latitude", latitude);
+        if (expenses ==0)
+            doc.append("expenses", expenses);
         if (status != null)
             doc.append("status", status);
         if (fuelType != null)

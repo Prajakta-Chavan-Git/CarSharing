@@ -92,7 +92,7 @@ public class Main implements AutoCloseable {
             //main.neo4jTest("hello, world");
             //main.redisTest("Redishallo");
             //main.mongoTest("");
-            //main.init();
+            main.init();
             //CarFactory carfactory = new CarFactory(100);
             //carfactory.getCarList();
             //main.addUser(main.createUser());
@@ -100,7 +100,7 @@ public class Main implements AutoCloseable {
             //main.storeCar(car,main.createUser());
             //car.setStatus("Damaged");
             //main.updateCarStatus(car);
-            main.demandArea(8.3,49.3,50000,2020,6);
+            System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
 
 
         } catch (Exception e) {
