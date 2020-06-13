@@ -465,4 +465,45 @@ RETURN count(distinct (c)), count(u)
         return result;
 
     }
+    // Use case 14 Devesh Vashishth
+    public HashMap<Integer, Integer> findMarginalGain() {
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CaCarSharingrSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("journey");
+
+        Bson lookup = new Document("$lookup",
+                new Document("from", "car")
+                        .append("localField", "Car Id")
+                        .append("foreignField", "Car Id")
+                        .append("as", "car_docs"));
+
+        List<Bson> lookupList = new ArrayList<>();
+
+        AggregateIterable<Document> it = mongoCollection.aggregate(lookupList);
+
+        // a map for key=car_id, value=profit
+        HashMap<Integer, Integer> gainMap = new HashMap<>();
+        for (Document row : it) {
+            int carId = row.getInteger("Car Id");
+            int timeInHours = row.getInteger("Time(in hrs)");
+            int distance = row.getInteger("Distance");
+            // left join, first element always present
+            Document carDocument = ((List<Document>)row.get("car_docs")).get(0);
+            int insurancePerMonthCharge = carDocument.getInteger("Insurance per month charges");
+            int maintenanceCharges = carDocument.getInteger("Maintenance charges");
+            int kmCarRate = carDocument.getInteger("Care rate($per km)");
+            int hourCarRate = carDocument.getInteger("Car rate ($per hour)");
+            int gain = ((timeInHours * hourCarRate) + (kmCarRate * distance)) - (insurancePerMonthCharge + maintenanceCharges);
+
+            if (gainMap.containsKey(carId)) {
+                gainMap.put(carId, gainMap.get(carId) + gain);
+            } else {
+                // first time journey
+                gainMap.put(carId, gain);
+            }
+        }
+
+        System.out.println(Collections.singletonList(gainMap));
+
+        return gainMap;
+    }
 }
