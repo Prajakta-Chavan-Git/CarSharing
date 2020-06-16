@@ -28,9 +28,9 @@ public class Rating implements IStoreableObject {
         this.comment = comments;
     }
 
-    public void setObjectID(String pID){
-        if(objectID == null)
-            objectID=pID;
+    public void setObjectID(String pID) {
+        if (objectID == null)
+            objectID = pID;
     }
 
     public void setCar(Car car) {
@@ -70,8 +70,7 @@ public class Rating implements IStoreableObject {
     }
 
 
-
-    public Rating(int cleanliness, int comfort, int reliability, String comment, String objectID, Car car, User user){
+    public Rating(int cleanliness, int comfort, int reliability, String comment, String objectID, Car car, User user) {
         this.cleanliness = cleanliness;
         this.comfort = comfort;
         this.comment = comment;
@@ -80,7 +79,8 @@ public class Rating implements IStoreableObject {
         this.user = user;
         this.car = car;
     }
-    public Rating(int cleanliness, int comfort, int reliability, String comment){
+
+    public Rating(int cleanliness, int comfort, int reliability, String comment) {
         this.cleanliness = cleanliness;
         this.comfort = comfort;
         this.comment = comment;
@@ -92,12 +92,9 @@ public class Rating implements IStoreableObject {
         Document doc = new Document();
         if (objectID != null)
             doc.append("_id", objectID);
-        if (cleanliness == 0)
-            doc.append("cleanliness", cleanliness);
-        if (comfort == 0)
-            doc.append("comfort", comfort);
-        if (reliability == 0)
-            doc.append("reliability", reliability);
+        doc.append("cleanliness", cleanliness);
+        doc.append("comfort", comfort);
+        doc.append("reliability", reliability);
         if (comment != null)
             doc.append("comment", comment);
         if (user != null)

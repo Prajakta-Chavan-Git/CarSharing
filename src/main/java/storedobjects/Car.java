@@ -18,6 +18,7 @@ public class Car implements IStoreableObject{
     private String fuelType;
     private ArrayList<Comment> comments;
     private double expenses;
+    private double rating;
 
     public double getExpenses() {
         return expenses;
@@ -104,7 +105,13 @@ public class Car implements IStoreableObject{
         this.comments = comments;
     }
 
+    public double getRating() {
+        return rating;
+    }
 
+    public void setRating(double rating) {
+        this.rating = rating;
+    }
 
     public void setObjectID(String pID){
         if(objectID == null)
@@ -122,25 +129,28 @@ public class Car implements IStoreableObject{
         this.status = status;
         this.fuelType = fuelType;
         this.expenses = expenses;
+        this.rating = -1.0;
     }
 
     @Override
     public Document toDocument() {
         Document doc = new Document();
-        if (seats == 0)
+        if (seats != 0)
             doc.append("seats", seats);
         if (manufacturer != null)
             doc.append("manufacturer", manufacturer);
         if (carType != null)
             doc.append("carType", carType);
-        if (fuelConsumption == 0)
+        if (fuelConsumption != 0)
             doc.append("fuelConsumption", fuelConsumption);
-        if (longitude ==-360)
+        if (longitude != -360)
             doc.append("longitude", longitude);
-        if (latitude ==-360)
+        if (latitude != -360)
             doc.append("latitude", latitude);
-        if (expenses ==0)
+        if (expenses !=0)
             doc.append("expenses", expenses);
+        if (rating != -1)
+            doc.append("expenses", rating);
         if (status != null)
             doc.append("status", status);
         if (fuelType != null)

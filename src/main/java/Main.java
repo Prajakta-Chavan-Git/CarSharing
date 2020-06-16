@@ -26,6 +26,7 @@ import java.util.*;
 //import org.neo4j.graphdb.spatial.Geometry;
 //import org.neo4j.graphdb.spatial.Point;
 
+import static org.neo4j.driver.Values.ofLocalDateTime;
 import static org.neo4j.driver.Values.parameters;
 //import static org.neo4j.driver.Values.
 
@@ -93,14 +94,22 @@ public class Main implements AutoCloseable {
             //main.redisTest("Redishallo");
             //main.mongoTest("");
             main.init();
-            //CarFactory carfactory = new CarFactory(100);
-            //carfactory.getCarList();
-            //main.addUser(main.createUser());
-            //Car car = main.createCar();
-            //main.storeCar(car,main.createUser());
-            //car.setStatus("Damaged");
-            //main.updateCarStatus(car);
-            System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
+            //CarFactory carfactory = new CarFactory(1);
+//            Car car = carfactory.getCarList().get(0);
+//            UserFactory userFactory = new UserFactory(1);
+//            User user = userFactory.getUserList().get(0);
+//            main.addUser(user);
+//            ReviewFactory reviewFactory = new ReviewFactory(1);
+//            Rating rating = reviewFactory.getRatingList().get(0);
+//            main.borrowCar(user,car,LocalDateTime.now(),new Date());
+//            main.addUser(main.createUser());
+//            Car car = main.createCar();
+//            main.storeCar(car, user);
+//            car.setStatus("Damaged");
+//            main.updateCarStatus(car);
+//            main.returnCar(user,car,rating,CarFactory.randDouble(49.0,50.0),CarFactory.randDouble(8.0,10.0),12.0);
+//            System.out.println("Car Status: " + car.getStatus());
+//            System.out.println("Car ID: " + car.getObjectID());
 
 
         } catch (Exception e) {
@@ -224,8 +233,8 @@ public class Main implements AutoCloseable {
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = car.toDocument();
         BasicDBObject update = new BasicDBObject();
-        update.put("$set", new Document("Status", car.getStatus()));
-        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()), update);
+        update.put("$set", new Document("status", car.getStatus()));
+        mongoCollection.findOneAndUpdate(new Document("_id", new ObjectId(car.getObjectID())), update);
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -272,10 +281,10 @@ public class Main implements AutoCloseable {
 
 
     public void init() {
-        ArrayList<Car> cars = new CarFactory(50).getCarList();
-        ArrayList<User> users = new UserFactory(50).getUserList();
-        ArrayList<Query> queries = new QueryFactory(50).create();
-        ArrayList<Rating> ratings = new ReviewFactory(50).getRatingList();
+        ArrayList<Car> cars = new CarFactory(10).getCarList();
+        ArrayList<User> users = new UserFactory(10).getUserList();
+        ArrayList<Query> queries = new QueryFactory(10).create();
+        ArrayList<Rating> ratings = new ReviewFactory(10).getRatingList();
         createSearches(users, queries);
 
         for (User user : users) {
@@ -307,7 +316,7 @@ public class Main implements AutoCloseable {
 
         for (Car car: cars
              ) {
-            System.out.println("Car rating: " + calculateCarRating(car));
+            System.out.println("UC5 This car has a general rating of: " + getCarRating(car));
         }
 
     }
@@ -390,6 +399,7 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
+        calculateCarRating(car);
     }
 
     //Use Case 5 Maurice Chrisnach
@@ -413,9 +423,32 @@ public class Main implements AutoCloseable {
         if(rating != "NULL"){
             carRating = Double.parseDouble(rating.replace('\"',' '));
         }
+        System.out.println("Car Rating: " + carRating);
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        car.setRating(carRating);
+        updateCarRating(car);
         return carRating;
     }
 
+    //Part of UC5
+    public void updateCarRating(Car car) {
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        BasicDBObject update = new BasicDBObject();
+        update.put("$set", new Document("rating", car.getRating()));
+        mongoCollection.findOneAndUpdate(new Document("_id", new ObjectId(car.getObjectID())), update);
+    }
+
+    public double getCarRating(Car car){
+        double carRating = -1;
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = mongoCollection.find(new Document("_id", new ObjectId(car.getObjectID()))).first();
+        if(doc1.containsKey("rating"))
+            carRating = doc1.getDouble("rating");
+        return carRating;
+    }
     //Use Case 2 Maximilian Schuhmacher
 
     public void findHighDemandZone() {
