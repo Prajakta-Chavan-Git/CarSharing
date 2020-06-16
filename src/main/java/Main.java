@@ -19,6 +19,7 @@ import storedobjects.*;
 import storedobjects.Query;
 
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -91,7 +92,7 @@ public class Main implements AutoCloseable {
             //main.neo4jTest("hello, world");
             //main.redisTest("Redishallo");
             //main.mongoTest("");
-            //main.init();
+            main.init();
             //CarFactory carfactory = new CarFactory(100);
             //carfactory.getCarList();
             //main.addUser(main.createUser());
@@ -99,8 +100,14 @@ public class Main implements AutoCloseable {
             //main.storeCar(car,main.createUser());
             //car.setStatus("Damaged");
             //main.updateCarStatus(car);
-            main.demandArea(8.3,49.3,50000,2020,6);
 
+            System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
+
+            //main.demandArea(8.3,49.3,50000,2020,6);
+            ArrayList<Area> areas = main.findHighDemandZone(6, 2020, 50000);
+            for(Area area: areas){
+                System.out.println(area);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -192,17 +199,17 @@ public class Main implements AutoCloseable {
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run("MATCH (u:User{objectID:$uid}) " +
-                        "MERGE (l:Location{longitude:$longitude, latitude:$latitude}) " +
-                "WITH (l),(u) " +
-                "MATCH (old:Location{}) " +
-                "WITH (u),(l),(old), " +
-                "ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: old.longitude, latitude: old.latitude }))) as dist "+
-                "WHERE dist<50000 AND NOT id(l) = id(old) " +
-                "MERGE (l)-[:Dist{value:dist}]->(old) " +
-                //"MERGE (l)<-[:Dist{value:dist}]-(old) " +
-                "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
-                ,parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
-                        "radius", query.getRadius(), "today", LocalDateTime.now()));
+                                "MERGE (l:Location{longitude:$longitude, latitude:$latitude}) " +
+                                "WITH (l),(u) " +
+                                "MATCH (old:Location{}) " +
+                                "WITH (u),(l),(old), " +
+                                "ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: old.longitude, latitude: old.latitude }))) as dist " +
+                                "WHERE dist<50000 AND NOT id(l) = id(old) " +
+                                //"MERGE (l)-[:Dist{value:dist}]->(old) " +
+                                //"MERGE (l)<-[:Dist{value:dist}]-(old) " +
+                                "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
+                        , parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
+                                "radius", query.getRadius(), "today", LocalDateTime.now()));
                 return "done";
             }
         });
@@ -289,7 +296,7 @@ public class Main implements AutoCloseable {
         for (Car car : cars) {
             storeCar(car, users.get(QueryFactory.randInt(0, (users.size() - 1) / 20 + 1)));
         }
-        for(Rating rating: ratings){
+        for (Rating rating : ratings) {
             User user = users.get(QueryFactory.randInt(0, (users.size() - 1)));
             Car car = cars.get(QueryFactory.randInt(0, (cars.size() - 1)));
 
@@ -300,8 +307,8 @@ public class Main implements AutoCloseable {
             cal.setTime(new Date()); // sets calendar time/date
             cal.add(Calendar.HOUR_OF_DAY, 2); // adds one hour
 
-            borrowCar(user,car, LocalDateTime.now(),cal.getTime());
-            returnCar(user, car, rating,CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10),CarFactory.randDouble(1,100) );
+            borrowCar(user, car, LocalDateTime.now(), cal.getTime());
+            returnCar(user, car, rating, CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10), CarFactory.randDouble(1, 100));
         }
 
         for (Car car: cars
@@ -334,7 +341,7 @@ public class Main implements AutoCloseable {
                         "MATCH (c:Car{objectID:$cID}), (u:User{objectID:$uID})" +
                                 "WITH (u), (c)" +
                                 "MERGE (u) -[b:BORROWS{from:$from, till:$till}]->(c)"
-                                ,
+                        ,
                         parameters("cID", car.getObjectID(),
                                 "from", from.toString(),
                                 "till", till.toString(),
@@ -345,16 +352,20 @@ public class Main implements AutoCloseable {
         });
     }
 
+    //Part of UC 5
     public void returnCar(User user, Car car, Rating rating, double latitude, double longitude, double km){
 
         //Update Status of Car, Save the Raing in Mongo DB
         car.setStatus("Available");
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
-        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("rating");
+
+        //Store car review
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("review");
         Document doc1 = rating.toDocument();
         mongoCollection.insertOne(doc1);
         updateCarStatus(car);
 
+        //Create Review Relations
         Session session = driverNeo4j.session();
         String greeting = session.writeTransaction(new TransactionWork<String>() {
 
@@ -381,7 +392,7 @@ public class Main implements AutoCloseable {
                                 "comment", rating.getComments(),
                                 "u_ID", user.getObjectID(),
                                 "longitude", longitude,
-                                "latitude",latitude,
+                                "latitude", latitude,
                                 "km", km
                         ));
                 return "done";
@@ -393,32 +404,66 @@ public class Main implements AutoCloseable {
 
     //Use Case 5 Maurice Chrisnach
     public double calculateCarRating(Car car) {
-        double rating = 0;
+        //calculate Car rating
+        Session session = driverNeo4j.session();
+        String rating = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH (c:Car{objectID:$c_ID})<-[rating:GIVES_RATING]-() " +
+                                "RETURN apoc.number.format(((avg(rating.RELIABLE) + avg(rating.CLEAN) + avg(rating.COMFORT))/3), '#.#')",
+                        parameters(
+                                "c_ID", car.getObjectID()
+                        ));
+                return result.next().get(0).toString();
+            }
+        });
+        double carRating = 0;
+        if(rating != "NULL"){
+            carRating = Double.parseDouble(rating.replace('\"',' '));
+        }
+        return carRating;
+    }
+
+    //Use Case 2 Maximilian Schuhmacher
+
+    public ArrayList<Area> findHighDemandZone(int month, int year, int areaSize) {
         Session session = driverNeo4j.session();
         String greeting = session.writeTransaction(new TransactionWork<String>() {
 
             @Override
             public String execute(Transaction tx) {
                 Result result = tx.run(
-                        "MATCH (c:Car{objectID:$c_ID})<-[rating:GIVES_RATING]-() " +
-                                "RETURN avg(rating.CLEAN), rating.RELIABLE, rating.COMFORT",
+                        "MATCH (l:Location), (o:Location)\n" +
+                                "WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: o.longitude, latitude: o.latitude}))) <= $areaSize\n" +
+                                "OPTIONAL MATCH  (l)<-[s:LOOKING_FOR_CARS]-(u)\n" +
+                                "WHERE (s.date.year = $year AND s.date.month=$month)\n" +
+                                "WITH l,s, u ,o\n" +
+                                "OPTIONAL MATCH (l)<-[w:WAITING_HERE]-(c)\n" +
+                                "WHERE (w.from.month<=$month AND (w.till.month>=$month OR w.till IS NULL) AND w.from.year<=$year AND (w.till.year>=$year OR w.till IS NULL))\n" +
+                                "RETURN (count(u)*1.0)/(count(c)+1) as score, o.longitude, o.latitude, count(distinct(c)), count(u)",
                         parameters(
-                                "c_ID", car.getObjectID()
+                                "month", month, "year", year, "areaSize", areaSize
                         ));
-                if(!result.hasNext()) return "0";
                 String retResult = "";
-
-                return result.next().get(0).toString();
+                //0:score, 1:long, 2:lat
+                for (Record record : result.list()) {
+                    retResult += record.get(0).toString() + "," + record.get(1).toString() + "," + record.get(2).toString() + ","+record.get(3)+","+record.get(4)+ ";";
+                }
+                System.out.println(retResult);
+                return retResult;
             }
         });
-        System.out.println(greeting);
-        return rating;
-    }
+        String[] string = greeting.split(";");
 
-    //Use Case 2 Maximilian Schuhmacher
-
-    public void findHighDemandZone() {
-
+        ArrayList<Area> result = new ArrayList<>();
+        for (int i = 0; i < string.length; i++) {
+            String[] values = string[i].split(",");
+            Area area = new Area(Double.parseDouble(values[1]), Double.parseDouble(values[2]), areaSize, Double.parseDouble(values[0]), Integer.parseInt(values[3]), Integer.parseInt(values[4]));
+            result.add(area);
+        }
+        return result;
     }
 
     public ArrayList<Integer> demandArea(double longitude, double latitude, int areaSize, int year, int month) {
@@ -449,7 +494,7 @@ RETURN count(distinct (c)), count(u)
                                 "WHERE (w.from.month<=$month AND (w.till.month>=$month OR w.till IS NULL) AND w.from.year<=$year AND (w.till.year>=$year OR w.till IS NULL)) " +
                                 "RETURN count(distinct (c)), count(u)",
                         parameters(
-                                "longitude", longitude, "latitude", latitude, "month", month, "year", year, "areaSize",areaSize
+                                "longitude", longitude, "latitude", latitude, "month", month, "year", year, "areaSize", areaSize
                         ));
                 Record record = result.single();
                 String retResult = record.get(0).toString() + ":" + record.get(1).toString();
