@@ -102,13 +102,13 @@ public class Main implements AutoCloseable {
             //car.setStatus("Damaged");
             //main.updateCarStatus(car);
 
-            System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
+            //System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
 
             //main.demandArea(8.3,49.3,50000,2020,6);
-            ArrayList<Area> areas = main.findHighDemandZone(6, 2020, 50000);
-            for(Area area: areas){
+            //ArrayList<Area> areas = main.findHighDemandZone(6, 2020, 50000);
+            /*for(Area area: areas){
                 System.out.println(area);
-            }
+            }*/
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -279,9 +279,9 @@ public class Main implements AutoCloseable {
 
 
     public void init() {
-        ArrayList<Car> cars = new CarFactory(250).getCarList();
+        ArrayList<Car> cars = new CarFactory(75).getCarList();
         ArrayList<User> users = new UserFactory(250).getUserList();
-        ArrayList<Query> queries = new QueryFactory(550).create();
+        ArrayList<Query> queries = new QueryFactory(350).create();
         ArrayList<Rating> ratings = new ReviewFactory(150).getRatingList();
         createSearches(users, queries);
 
@@ -381,7 +381,11 @@ public class Main implements AutoCloseable {
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude}) " +
                                 "MERGE (c) -[:WAITING_HERE {from:$today}]-> (l) " +
                                 "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today}]-> (c) " +
-                                "MERGE (u) -[:BORROWS{returned:$today, km:$km}]-> (c) ",
+                                "WITH u,c "+
+                                "MATCH (u)-[b:BORROWS]->(c) " +
+                                "WHERE NOT EXISTS(b.km)" +
+                                "SET b.returned=$today " +
+                                "SET b.km=$km",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDateTime.now(),
