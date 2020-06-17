@@ -118,11 +118,11 @@ public class Main implements AutoCloseable {
 //            System.out.println("Car Status: " + car.getStatus());
 //            System.out.println("Car ID: " + car.getObjectID());
 
-            System.out.println("Demand: " +main.demandArea(8.3,49.3,50000,2020,6));
+            System.out.println("Demand: " + main.demandArea(8.3, 49.3, 50000, 2020, 6));
 
             //main.demandArea(8.3,49.3,50000,2020,6);
             ArrayList<Area> areas = main.findHighDemandZone(6, 2020, 50000);
-            for(Area area: areas){
+            for (Area area : areas) {
                 System.out.println(area);
             }
 
@@ -224,7 +224,7 @@ public class Main implements AutoCloseable {
                                 "WHERE dist<50000 AND NOT id(l) = id(old) " +
                                 //"MERGE (l)-[:Dist{value:dist}]->(old) " +
                                 //"MERGE (l)<-[:Dist{value:dist}]-(old) " +
-                                "CREATE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
+                                "MERGE (u) -[:LOOKING_FOR_CARS{radius:$radius, date:$today}]-> (l)"
                         , parameters("uid", user.getObjectID(), "longitude", longitude, "latitude", latitude,
                                 "radius", query.getRadius(), "today", LocalDateTime.now()));
                 return "done";
@@ -293,12 +293,38 @@ public class Main implements AutoCloseable {
         });
     }
 
+    public boolean writeRedis(String key, String value){
+        try {
+            redis.clients.jedis.Transaction transaction = driverRedis.multi();
+            transaction.set(key, value);
+
+            return true;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    public ArrayList<String> readRedis(String key){
+        try {
+            redis.clients.jedis.Transaction transaction = driverRedis.multi();
+            transaction.get(key);
+            List<Object> result = transaction.exec();
+            ArrayList<String> resultList = new ArrayList<>();
+            for (Object response : result) {
+               resultList.add(response.toString());
+            }
+
+            return resultList;
+        }catch (Exception e){
+            return new ArrayList<String>();
+        }
+    }
 
     public void init() {
-        ArrayList<Car> cars = new CarFactory(10).getCarList();
-        ArrayList<User> users = new UserFactory(10).getUserList();
-        ArrayList<Query> queries = new QueryFactory(10).create();
-        ArrayList<Rating> ratings = new ReviewFactory(10).getRatingList();
+        ArrayList<Car> cars = new CarFactory(20).getCarList();
+        ArrayList<User> users = new UserFactory(50).getUserList();
+        ArrayList<Query> queries = new QueryFactory(70).create();
+        ArrayList<Rating> ratings = new ReviewFactory(20).getRatingList();
         createSearches(users, queries);
 
         for (User user : users) {
@@ -328,8 +354,8 @@ public class Main implements AutoCloseable {
             returnCar(user, car, rating, CarFactory.randDouble(49.008091, 51), CarFactory.randDouble(8.403760, 10), CarFactory.randDouble(1, 100));
         }
 
-        for (Car car: cars
-             ) {
+        for (Car car : cars
+        ) {
             System.out.println("UC5 This car has a general rating of: " + getCarRating(car));
         }
 
@@ -368,7 +394,7 @@ public class Main implements AutoCloseable {
     }
 
     //Part of UC 5
-    public void returnCar(User user, Car car, Rating rating, double latitude, double longitude, double km){
+    public void returnCar(User user, Car car, Rating rating, double latitude, double longitude, double km) {
 
         //Update Status of Car, Save the Raing in Mongo DB
         car.setStatus("Available");
@@ -434,8 +460,8 @@ public class Main implements AutoCloseable {
             }
         });
         double carRating = 0;
-        if(rating != "NULL"){
-            carRating = Double.parseDouble(rating.replace('\"',' '));
+        if (rating != "NULL") {
+            carRating = Double.parseDouble(rating.replace('\"', ' '));
         }
         System.out.println("Car Rating: " + carRating);
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
@@ -454,12 +480,12 @@ public class Main implements AutoCloseable {
         mongoCollection.findOneAndUpdate(new Document("_id", new ObjectId(car.getObjectID())), update);
     }
 
-    public double getCarRating(Car car){
+    public double getCarRating(Car car) {
         double carRating = -1;
         MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = mongoCollection.find(new Document("_id", new ObjectId(car.getObjectID()))).first();
-        if(doc1.containsKey("rating"))
+        if (doc1.containsKey("rating"))
             carRating = doc1.getDouble("rating");
         return carRating;
     }
@@ -486,7 +512,7 @@ public class Main implements AutoCloseable {
                 String retResult = "";
                 //0:score, 1:long, 2:lat
                 for (Record record : result.list()) {
-                    retResult += record.get(0).toString() + "," + record.get(1).toString() + "," + record.get(2).toString() + ","+record.get(3)+","+record.get(4)+ ";";
+                    retResult += record.get(0).toString() + "," + record.get(1).toString() + "," + record.get(2).toString() + "," + record.get(3) + "," + record.get(4) + ";";
                 }
                 System.out.println(retResult);
                 return retResult;
@@ -545,5 +571,53 @@ RETURN count(distinct (c)), count(u)
         result.add(Integer.parseInt(string[1]));
         return result;
 
+    }
+
+    //Use Case 7 Prajakta Chavan
+    public double calcProfit(User user) {
+        //Get cars and hours of useage
+
+        Session session = driverNeo4j.session();
+        String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+            @Override
+            public String execute(Transaction tx) {
+                Result result = tx.run(
+                        "MATCH(u:User{objectID:$u_ID})-[:OWNES]->(c:Car)<-[r:BORROWS]-(n) " +
+                                "RETURN c.objectID,sum(duration.between(datetime({epochmillis: apoc.date.parse(r.till, \"ms\", \"EEE MMM dd HH:mm:ss zzz yyyy\")}), datetime(r.from)).hours) as duration",
+                        parameters(
+                                "u_ID", user.getObjectID()
+                        ));
+                String retResult = "";
+                //0:c_ID, 1:duration
+                for (Record record : result.list()) {
+                    retResult += record.get(0).toString() + ":" + record.get(1).toString() + ";";
+                }
+                System.out.println(retResult);
+                return retResult;
+            }
+        });
+        Map<String, Double> objectIDHour = new HashMap<>();
+        String[] lines = greeting.split(";");
+        for (int i = 0; i < lines.length; i++) {
+            String[] values = lines[i].split(":");
+            objectIDHour.put(values[0], Double.parseDouble(values[1]));
+        }
+        //get rent and expenses
+
+        double carRating = -1;
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        ArrayList<Document> list = new ArrayList<>();
+        for (String id : objectIDHour.keySet()) {
+            list.add(mongoCollection.find(new Document("_id", new ObjectId(id))).first());
+        }
+
+        //calc
+        double profit = 0;
+        for (Document doc : list) {
+            profit = objectIDHour.get(doc.getObjectId("_id").toString()) * doc.getDouble("rentHour") - doc.getDouble("expenses");
+        }
+        return profit;
     }
 }
