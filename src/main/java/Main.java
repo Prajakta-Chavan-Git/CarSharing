@@ -278,10 +278,10 @@ public class Main implements AutoCloseable {
 
 
     public void init() {
-        ArrayList<Car> cars = new CarFactory(50).getCarList();
-        ArrayList<User> users = new UserFactory(50).getUserList();
-        ArrayList<Query> queries = new QueryFactory(50).create();
-        ArrayList<Rating> ratings = new ReviewFactory(50).getRatingList();
+        ArrayList<Car> cars = new CarFactory(250).getCarList();
+        ArrayList<User> users = new UserFactory(250).getUserList();
+        ArrayList<Query> queries = new QueryFactory(550).create();
+        ArrayList<Rating> ratings = new ReviewFactory(150).getRatingList();
         createSearches(users, queries);
 
         for (User user : users) {
