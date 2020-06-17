@@ -546,4 +546,10 @@ RETURN count(distinct (c)), count(u)
         return result;
 
     }
+
+    //Use Case 7 Prajakta Chavan
+    public double calcProfit (User user){
+
+        return 0;
+    }
 }
