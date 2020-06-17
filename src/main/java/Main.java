@@ -93,7 +93,7 @@ public class Main implements AutoCloseable {
             //main.neo4jTest("hello, world");
             //main.redisTest("Redishallo");
             //main.mongoTest("");
-            main.init();
+            //main.init();
             //CarFactory carfactory = new CarFactory(100);
             //carfactory.getCarList();
             //main.addUser(main.createUser());
@@ -492,32 +492,41 @@ public class Main implements AutoCloseable {
     //Use Case 2 Maximilian Schuhmacher
 
     public ArrayList<Area> findHighDemandZone(int month, int year, int areaSize) {
-        Session session = driverNeo4j.session();
-        String greeting = session.writeTransaction(new TransactionWork<String>() {
+        String key = "highDemandZone" + month + ":" + year + ":" + areaSize;
+        ArrayList<String> cache = readRedis(key);
+        String greeting;
+        if(cache.size()==0) {
+            Session session = driverNeo4j.session();
+            greeting = session.writeTransaction(new TransactionWork<String>() {
 
-            @Override
-            public String execute(Transaction tx) {
-                Result result = tx.run(
-                        "MATCH (l:Location), (o:Location)\n" +
-                                "WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: o.longitude, latitude: o.latitude}))) <= $areaSize\n" +
-                                "OPTIONAL MATCH  (l)<-[s:LOOKING_FOR_CARS]-(u)\n" +
-                                "WHERE (s.date.year = $year AND s.date.month=$month)\n" +
-                                "WITH l,s, u ,o\n" +
-                                "OPTIONAL MATCH (l)<-[w:WAITING_HERE]-(c)\n" +
-                                "WHERE (w.from.month<=$month AND (w.till.month>=$month OR w.till IS NULL) AND w.from.year<=$year AND (w.till.year>=$year OR w.till IS NULL))\n" +
-                                "RETURN (count(u)*1.0)/(count(c)+1) as score, o.longitude, o.latitude, count(distinct(c)), count(u)",
-                        parameters(
-                                "month", month, "year", year, "areaSize", areaSize
-                        ));
-                String retResult = "";
-                //0:score, 1:long, 2:lat
-                for (Record record : result.list()) {
-                    retResult += record.get(0).toString() + "," + record.get(1).toString() + "," + record.get(2).toString() + "," + record.get(3) + "," + record.get(4) + ";";
+                @Override
+                public String execute(Transaction tx) {
+                    Result result = tx.run(
+                            "MATCH (l:Location), (o:Location)\n" +
+                                    "WHERE ROUND(DISTANCE(point({ longitude: l.longitude, latitude: l.latitude }), point({ longitude: o.longitude, latitude: o.latitude}))) <= $areaSize\n" +
+                                    "OPTIONAL MATCH  (l)<-[s:LOOKING_FOR_CARS]-(u)\n" +
+                                    "WHERE (s.date.year = $year AND s.date.month=$month)\n" +
+                                    "WITH l,s, u ,o\n" +
+                                    "OPTIONAL MATCH (l)<-[w:WAITING_HERE]-(c)\n" +
+                                    "WHERE (w.from.month<=$month AND (w.till.month>=$month OR w.till IS NULL) AND w.from.year<=$year AND (w.till.year>=$year OR w.till IS NULL))\n" +
+                                    "RETURN (count(u)*1.0)/(count(c)+1) as score, o.longitude, o.latitude, count(distinct(c)), count(u)",
+                            parameters(
+                                    "month", month, "year", year, "areaSize", areaSize
+                            ));
+                    String retResult = "";
+                    //0:score, 1:long, 2:lat
+                    for (Record record : result.list()) {
+                        retResult += record.get(0).toString() + "," + record.get(1).toString() + "," + record.get(2).toString() + "," + record.get(3) + "," + record.get(4) + ";";
+                    }
+                    System.out.println(retResult);
+                    return retResult;
                 }
-                System.out.println(retResult);
-                return retResult;
-            }
-        });
+            });
+            writeRedis(key,greeting);
+        } else {
+            //System.out.println("CACHE");
+            greeting = cache.get(0);
+        }
         String[] string = greeting.split(";");
 
         ArrayList<Area> result = new ArrayList<>();
