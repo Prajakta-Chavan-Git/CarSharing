@@ -548,8 +548,50 @@ RETURN count(distinct (c)), count(u)
     }
 
     //Use Case 7 Prajakta Chavan
-    public double calcProfit (User user){
+        public double calcProfit (User user){
+        //Get cars and hours of useage
 
-        return 0;
+            Session session = driverNeo4j.session();
+            String greeting = session.writeTransaction(new TransactionWork<String>() {
+
+                @Override
+                public String execute(Transaction tx) {
+                    Result result = tx.run(
+                            "MATCH(u:User{objectID:$u_ID})-[:OWNES]->(c:Car)<-[r:BORROWS]-(n) " +
+                                    "RETURN c.objectID,sum(duration.between(datetime({epochmillis: apoc.date.parse(r.till, \"ms\", \"EEE MMM dd HH:mm:ss zzz yyyy\")}), datetime(r.from)).hours) as duration",
+                            parameters(
+                                    "u_ID", user.getObjectID()
+                            ));
+                    String retResult = "";
+                    //0:c_ID, 1:duration
+                    for (Record record : result.list()) {
+                        retResult += record.get(0).toString() + ":" + record.get(1).toString() + ";";
+                    }
+                    System.out.println(retResult);
+                    return retResult;
+                }
+            });
+            Map<String, Double> objectIDHour = new HashMap<>();
+            String[] lines = greeting.split(";");
+            for (int i = 0; i < lines.length; i++) {
+                String[] values = lines[i].split(":");
+                objectIDHour.put(values[0],Double.parseDouble(values[1]));
+            }
+        //get rent and expenses
+
+            double carRating = -1;
+            MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+            MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+            ArrayList<Document> list = new ArrayList<>();
+            for(String id: objectIDHour.keySet()){
+                list.add(mongoCollection.find(new Document("_id", new ObjectId(id))).first());
+            }
+
+        //calc
+            double profit = 0;
+            for(Document doc: list){
+                profit = objectIDHour.get(doc.getObjectId("_id").toString()) * doc.getDouble("rentHour") - doc.getDouble("expenses");
+            }
+        return profit;
     }
 }

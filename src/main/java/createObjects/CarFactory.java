@@ -41,13 +41,15 @@ public class CarFactory {
             double fuel = randDouble(3.0,20.0);
             double lat = randDouble(48,50);
             double longi = randDouble(8,10);
-            double expenses = randDouble(1,60);
+            double expenses = randDouble(10,100);
+
+            double rent = randDouble(5,35);
             String manufacturer = getRandomBrand();
             String type = getRandomType();
             String status = getRandomStatus();
             String fuelType = getRandomFuel();
             ArrayList commentList = generateComments();
-            Car newCar = new Car(seats,null,manufacturer,type,fuel,longi,lat,status,fuelType, expenses);
+            Car newCar = new Car(seats,null,manufacturer,type,fuel,longi,lat,status,fuelType, expenses, rent);
             carL.add(newCar);
         }
         return carL;

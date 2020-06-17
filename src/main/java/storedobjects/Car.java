@@ -18,6 +18,7 @@ public class Car implements IStoreableObject{
     private String fuelType;
     private ArrayList<Comment> comments;
     private double expenses;
+    private double rentHour;
     private double rating;
 
     public double getExpenses() {
@@ -28,6 +29,13 @@ public class Car implements IStoreableObject{
         this.expenses = expenses;
     }
 
+    public double getRentHour() {
+        return rentHour;
+    }
+
+    public void setRentHour(double rentHour) {
+        this.rentHour = rentHour;
+    }
 
     public int getSeats() {
         return seats;
@@ -118,7 +126,7 @@ public class Car implements IStoreableObject{
             objectID=pID;
     }
 
-    public Car(int seats, String objectID, String manufacturer, String carType, double fuelConsumption, double longitude, double latitude, String status, String fuelType, double expenses) {
+    public Car(int seats, String objectID, String manufacturer, String carType, double fuelConsumption, double longitude, double latitude, String status, String fuelType, double expenses, double rentHour) {
         this.seats = seats;
         this.objectID = objectID;
         this.manufacturer = manufacturer;
@@ -129,6 +137,7 @@ public class Car implements IStoreableObject{
         this.status = status;
         this.fuelType = fuelType;
         this.expenses = expenses;
+        this.rentHour=rentHour;
         this.rating = -1.0;
     }
 
