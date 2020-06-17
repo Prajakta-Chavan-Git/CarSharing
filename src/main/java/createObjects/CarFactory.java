@@ -39,14 +39,15 @@ public class CarFactory {
         for (int i = 0; i <= getAmount() ; i++) {
             int seats = randInt(2,7);
             double fuel = randDouble(3.0,20.0);
-            double lat = randDouble(-90.0,90.0);
-            double longi = randDouble(-180.0,180.0);
+            double lat = randDouble(48,50);
+            double longi = randDouble(8,10);
+            double expenses = randDouble(1,60);
             String manufacturer = getRandomBrand();
             String type = getRandomType();
             String status = getRandomStatus();
             String fuelType = getRandomFuel();
             ArrayList commentList = generateComments();
-            Car newCar = new Car(seats,null,manufacturer,type,fuel,longi,lat,status,fuelType);
+            Car newCar = new Car(seats,null,manufacturer,type,fuel,longi,lat,status,fuelType, expenses);
             carL.add(newCar);
         }
         return carL;
@@ -188,7 +189,7 @@ public class CarFactory {
         return commentList;
     }
 
-    private static int randInt(int min, int max){
+    public static int randInt(int min, int max){
         Random rand = new Random();
         int randomNum = rand.nextInt((max - min) + 1) + min;
         return randomNum;

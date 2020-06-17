@@ -26,6 +26,7 @@ import java.util.*;
 //import org.neo4j.graphdb.spatial.Geometry;
 //import org.neo4j.graphdb.spatial.Point;
 
+import static org.neo4j.driver.Values.ofLocalDateTime;
 import static org.neo4j.driver.Values.parameters;
 //import static org.neo4j.driver.Values.
 
@@ -230,8 +231,8 @@ public class Main implements AutoCloseable {
         MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
         Document doc1 = car.toDocument();
         BasicDBObject update = new BasicDBObject();
-        update.put("$set", new Document("Status", car.getStatus()));
-        mongoCollection.findOneAndUpdate(new Document("_id", car.getObjectID()), update);
+        update.put("$set", new Document("status", car.getStatus()));
+        mongoCollection.findOneAndUpdate(new Document("_id", new ObjectId(car.getObjectID())), update);
 
         //Neo4j
         Session session = driverNeo4j.session();
@@ -313,9 +314,7 @@ public class Main implements AutoCloseable {
 
         for (Car car: cars
              ) {
-            System.out.println(car.getObjectID());
-            calculateCarRating(car);
-
+            System.out.println("UC5 This car has a general rating of: " + getCarRating(car));
         }
 
     }
@@ -398,8 +397,7 @@ public class Main implements AutoCloseable {
                 return "done";
             }
         });
-        //give rating (Maurice)
-        //Timestamp
+        calculateCarRating(car);
     }
 
     //Use Case 5 Maurice Chrisnach
@@ -423,6 +421,30 @@ public class Main implements AutoCloseable {
         if(rating != "NULL"){
             carRating = Double.parseDouble(rating.replace('\"',' '));
         }
+        System.out.println("Car Rating: " + carRating);
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        car.setRating(carRating);
+        updateCarRating(car);
+        return carRating;
+    }
+
+    //Part of UC5
+    public void updateCarRating(Car car) {
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        BasicDBObject update = new BasicDBObject();
+        update.put("$set", new Document("rating", car.getRating()));
+        mongoCollection.findOneAndUpdate(new Document("_id", new ObjectId(car.getObjectID())), update);
+    }
+
+    public double getCarRating(Car car){
+        double carRating = -1;
+        MongoDatabase mongoDatabase = mongoClient.getDatabase("CarSharing");
+        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection("car");
+        Document doc1 = mongoCollection.find(new Document("_id", new ObjectId(car.getObjectID()))).first();
+        if(doc1.containsKey("rating"))
+            carRating = doc1.getDouble("rating");
         return carRating;
     }
 

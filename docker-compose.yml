@@ -20,7 +20,7 @@ services:
     volumes:
       - "./data:/data"
       - "./log:/log"
-      - "./plugin:/plugin"
+      - "./plugins:/plugins"
     ports:
       - "7474:7474"
       - "7473:7473"

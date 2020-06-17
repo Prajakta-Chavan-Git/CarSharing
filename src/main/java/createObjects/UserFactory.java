@@ -36,7 +36,7 @@ public class UserFactory {
 
     public ArrayList<User> createUsers(){
         ArrayList userL = new ArrayList<User>();
-        for (int i = 0; i <= getAmount() ; i++) {
+        for (int i = 0; i < getAmount() ; i++) {
             Date date = new Date(randInt(19,102),randInt(1,12),randInt(1,30));
             int phoneNr = randInt(1000000, 999999999);
             String pnr = Integer.toString(phoneNr);
