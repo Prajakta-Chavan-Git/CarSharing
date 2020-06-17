@@ -93,7 +93,7 @@ public class Main implements AutoCloseable {
             //main.neo4jTest("hello, world");
             //main.redisTest("Redishallo");
             //main.mongoTest("");
-            //main.init();
+            main.init();
             //CarFactory carfactory = new CarFactory(100);
             //carfactory.getCarList();
             //main.addUser(main.createUser());
@@ -423,7 +423,11 @@ public class Main implements AutoCloseable {
                                 "MERGE (l: Location{longitude:$longitude, latitude:$latitude}) " +
                                 "MERGE (c) -[:WAITING_HERE {from:$today}]-> (l) " +
                                 "MERGE (u) -[r:GIVES_RATING {CLEAN:$clean, RELIABLE:$reliable, COMFORT:$comfort, COMMENT:$comment, FROM:$today}]-> (c) " +
-                                "MERGE (u) -[:BORROWS{returned:$today, km:$km}]-> (c) ",
+                                "WITH u,c " +
+                                "MATCH (u)-[b:BORROWS]->(c) " +
+                                "WHERE NOT EXISTS (b.km)" +
+                                "SET b.km=$km " +
+                                "SET b.returned = $today ",
                         parameters("c_ID", car.getObjectID(),
                                 "status", car.getStatus(),
                                 "today", LocalDateTime.now(),
