@@ -1,6 +1,7 @@
 package storedobjects;
 
 import com.byteowls.jopencage.JOpenCageGeocoder;
+import static org.neo4j.driver.Values.parameters;
 import com.byteowls.jopencage.model.JOpenCageResponse;
 import com.byteowls.jopencage.model.JOpenCageReverseRequest;
 import org.bson.Document;
@@ -37,9 +38,10 @@ public class District {
 		//get geo-location of car
 		double lng = car.getLongitude();
 		double lat = car.getLatitude();
+		String objectID = car.getObjectID();
 		
 		//transfer coordinates to district address
-		JOpenCageGeocoder jOpenCageGeocoder = new JOpenCageGeocoder(API_KEY);
+		JOpenCageGeocoder jOpenCageGeocoder = new JOpenCageGeocoder("53bdc846f7e74443c061a3c8675de7f2");
 
 		JOpenCageReverseRequest request = new JOpenCageReverseRequest(lat, lng);
 		
@@ -58,6 +60,15 @@ public class District {
             
         }
         
+        try (Session session = driverNeo4j.session())
+        {
+            
+            Result result = session.run("MATCH (l:Location) <- [:WAITING_HERE] - (c: Car {objectID : $objectID})" + 
+            							"SET l.district = $district ",
+            							parameters("district", district, "objectID", objectID));
+            
+        };
+        
         //caching district of this car into Redis
         driverRedis.set(car.getObjectID() + "_district", district);
 		
@@ -75,11 +86,11 @@ public class District {
 		try (Session session = driverNeo4j.session())
         {
             
-            Result result = session.run("MATCH (n:Car)-[:LOCATES]->(m:Location {district: $district})"
-            		+ " RETURN count(n)",
+            Result result = session.run("MATCH (c:Car)-[:WAITING_HERE]->(l:Location {district: $district})"
+            		+ " RETURN count(c)",
             		parameters("district", district));
             amount = Integer.parseInt(result.toString());
-        }
+        };
 		
 		//caching #car into Redis
         driverRedis.incr(district + "_car_amount");
