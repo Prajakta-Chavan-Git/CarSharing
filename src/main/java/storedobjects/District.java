@@ -60,6 +60,7 @@ public class District {
             
         }
         
+        //store district into neo4j location node
         try (Session session = driverNeo4j.session())
         {
             
